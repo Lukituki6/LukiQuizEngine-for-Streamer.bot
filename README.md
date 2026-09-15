@@ -1,3 +1,6 @@
+> [!NOTE]
+> This project is not affiliated with, endorsed by, or officially supported by Streamer.bot, Twitch, YouTube, or Kick. Streamer.bot, Twitch, YouTube, and Kick are trademarks or names of their respective owners. This project only uses features available in Streamer.bot and is provided as an independent community tool. 
+
 # Quiz do Streamer.bot + OBS (overlay)
 
 Lokalny system quizowy: panel sterowania w przeglądarce,
