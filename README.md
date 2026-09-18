@@ -93,7 +93,7 @@ Zalecana jest aktualna stabilna wersja Streamer.bot.
 
 ### 1. Pobierz i umieść folder
 
-Pobierz ZIP wydania i rozpakuj folder w stałym miejscu, na przykład:
+Pobierz ZIP i rozpakuj folder w stałym miejscu, na przykład:
 
 ```text
 C:\StreamerBot\QuizWidzow
@@ -147,7 +147,7 @@ Twitch > Chat > Message
 
 Jeden trigger obsługuje:
 
-- `!1`–`!12`;
+- `!1`-`!12`;
 - `!punkty`;
 - `!ranking`;
 - `!quiz ...`.
@@ -304,7 +304,7 @@ nie powinno ich naliczyć drugi raz.
 
 | Komenda | Działanie |
 | --- | --- |
-| `!1`–`!12` | Oddaje lub zmienia głos na istniejącą odpowiedź |
+| `!1`-`!12` | Oddaje lub zmienia głos na istniejącą odpowiedź |
 | `!punkty` | Pokazuje własne punkty i liczbę poprawnych odpowiedzi |
 | `!ranking` | Pokazuje TOP 5 na czacie |
 
