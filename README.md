@@ -96,7 +96,7 @@ Zalecana jest aktualna stabilna wersja Streamer.bot.
 Pobierz ZIP i rozpakuj folder w stałym miejscu, na przykład:
 
 ```text
-C:\StreamerBot\QuizWidzow
+C:\StreamerBot\QuizLoL
 ```
 
 Nie przenoś folderu po ustawieniu mapowania HTTP. Jeżeli go przeniesiesz,
@@ -205,7 +205,7 @@ W sekcji **Mappings** dodaj:
 
 ```text
 Path:   quiz
-Folder: C:\StreamerBot\QuizWidzow
+Folder: C:\StreamerBot\QuizLoL
 ```
 
 W polu `Folder` wskaż faktyczną lokalizację rozpakowanego wydania. Wartość
@@ -416,8 +416,7 @@ Ostatnia aktualizacja
 ```
 
 CSV zawiera nazwy i Twitch User ID widzów. Traktuj go jak kopię prywatnych
-danych i nie dodawaj do publicznego repozytorium. `.gitignore` w tym projekcie
-ignoruje pliki CSV.
+danych.
 
 ### Import
 
@@ -435,6 +434,7 @@ pasującej osoby, a osoby nieobecne w CSV pozostają w rankingu.
 Importer rozpoznaje separator `;`, `,` albo tabulator. Wymagane są kolumny
 użytkownika i punktów. Obsługiwane są również starsze kopie bez Twitch User ID;
 takie wpisy są dopasowywane po nazwie widza.
+(nie opublikowałem wersji ze starszymi kopiami CSV, ta notka jest głównie po to, abym nie zapomniał XD)
 
 Przed każdym udanym importem silnik zapisuje poprzedni ranking w:
 
