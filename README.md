@@ -13,6 +13,7 @@ abonamentu ani dodatkowego klucza API.
 ## Informacja dotycząca użycia AI
 
 Przez dużą ilość błędów jak i skomplikowanych funkcji, postanowiłem końcowo wesprzeć się pomocą AI. Także kod był pisany wspomagając się sztuczną inteligencją w celu przyśpieszenia procesu pracy.
+              **AI-assisted**
 
 ## Spis treści
 
