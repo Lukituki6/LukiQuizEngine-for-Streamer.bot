@@ -17,6 +17,8 @@ Przez dużą ilość błędów jak i skomplikowanych funkcji, postanowiłem koń
 **AI-assisted**
 
 Lista zmian i aktualizacji: [CHANGELOG.md](CHANGELOG.md)
+Instrukcja przejścia ze starszej wersji jest w [MIGRATION.md](MIGRATION.md)
+
 # Informacje o wydaniu 2.0.0
 
 <details>
