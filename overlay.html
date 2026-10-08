@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src ws://127.0.0.1:* ws://localhost:*; img-src data:; font-src data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>LukiQuizEngine - Overlay 2.0.0 BETA</title>
+  <style>
+    :root {
+      --bg: rgba(10, 12, 21, 0.94);
+      --panel: rgba(23, 27, 43, 0.96);
+      --panel-2: rgba(31, 37, 58, 0.98);
+      --text: #f7f8ff;
+      --muted: #aab1ca;
+      --accent: #9b72ff;
+      --accent-2: #5a8cff;
+      --correct: #3fd18a;
+      --warning: #ffbf5e;
+      --danger: #ff5f7c;
+      --line: rgba(255, 255, 255, 0.1);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+      --overlay-scale: 1;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display:none!important; }
+    html, body { width:100%; height:100%; margin:0; overflow:hidden; background:transparent; color:var(--text); font-family:Inter,"Segoe UI",Arial,sans-serif; }
+    #quiz-root { position:absolute; left:50%; bottom:40px; width:min(1400px,calc(100vw - 64px)); transform:translate(-50%,26px) scale(var(--overlay-scale)); transform-origin:bottom center; opacity:0; visibility:hidden; transition:opacity 280ms ease,transform 320ms cubic-bezier(.2,.8,.2,1),visibility 280ms; }
+    #quiz-root.visible { transform:translate(-50%,0) scale(var(--overlay-scale)); opacity:1; visibility:visible; }
+    .shell { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:10px; filter:drop-shadow(var(--shadow)); }
+    .quiz-card,.leaderboard-card,.podium-card { border:1px solid var(--line); border-radius:19px; background:radial-gradient(circle at 10% 0%,rgba(155,114,255,.17),transparent 34%),linear-gradient(155deg,var(--bg),rgba(11,14,24,.97)); backdrop-filter:blur(18px); overflow:hidden; }
+    .quiz-card { padding:17px 19px 18px; }
+    .topline { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:9px; }
+    .brand { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:14px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    .brand-dot { width:9px; height:9px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 6px rgba(155,114,255,.13),0 0 22px rgba(155,114,255,.7); }
+    .meta { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:14px; font-weight:700; }
+    .status-pill { display:inline-flex; align-items:center; min-height:29px; padding:5px 11px; border:1px solid rgba(155,114,255,.32); border-radius:999px; background:rgba(155,114,255,.12); color:#d9caff; }
+    .status-pill.locked { border-color:rgba(255,191,94,.35); background:rgba(255,191,94,.12); color:#ffdb9e; }
+    .status-pill.revealed { border-color:rgba(63,209,138,.35); background:rgba(63,209,138,.12); color:#a6f3cc; }
+    .question { margin:0 0 13px; font-size:clamp(24px,1.75vw,34px); line-height:1.13; font-weight:900; letter-spacing:-.025em; text-wrap:balance; text-shadow:0 2px 12px rgba(0,0,0,.35); }
+    .answers { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+    .answers[data-count="1"] { grid-template-columns:1fr; }
+    .answers[data-count="2"] { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .answer { position:relative; min-height:49px; border:1px solid var(--line); border-radius:12px; background:var(--panel); overflow:hidden; isolation:isolate; transition:border-color 220ms ease,transform 220ms ease,box-shadow 220ms ease; }
+    .answer-fill { position:absolute; inset:0 auto 0 0; z-index:-1; width:0%; background:linear-gradient(90deg,rgba(90,140,255,.42),rgba(155,114,255,.28)); transition:width 420ms cubic-bezier(.2,.8,.2,1),background 250ms ease; }
+    .answer-inner { display:grid; grid-template-columns:35px minmax(0,1fr) auto; align-items:center; gap:8px; min-height:47px; padding:6px 9px 6px 6px; }
+    .answer-index { display:grid; place-items:center; width:35px; height:35px; border:1px solid rgba(255,255,255,.12); border-radius:9px; background:rgba(7,9,16,.55); color:#fff; font-size:15px; font-weight:900; }
+    .answer-text { min-width:0; font-size:16px; line-height:1.12; font-weight:760; overflow-wrap:anywhere; }
+    .answer-score { min-width:58px; color:var(--muted); font-size:12px; font-weight:800; text-align:right; white-space:nowrap; }
+    .answer.correct { border-color:rgba(63,209,138,.8); box-shadow:0 0 0 2px rgba(63,209,138,.13),0 8px 30px rgba(63,209,138,.13); transform:translateY(-1px); }
+    .answer.correct .answer-fill { background:linear-gradient(90deg,rgba(63,209,138,.5),rgba(63,209,138,.2)); }
+    .answer.correct .answer-index { border-color:rgba(63,209,138,.5); background:rgba(25,104,69,.67); }
+    .answer.adjacent { border-color:rgba(255,191,94,.72); box-shadow:0 0 0 2px rgba(255,191,94,.1),0 8px 30px rgba(255,191,94,.09); }
+    .answer.adjacent .answer-fill { background:linear-gradient(90deg,rgba(255,191,94,.42),rgba(255,191,94,.15)); }
+    .answer.adjacent .answer-index { border-color:rgba(255,191,94,.45); background:rgba(111,72,20,.67); }
+    .footerline { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:11px; color:var(--muted); font-size:13px; font-weight:700; }
+    .command-hint { color:#e7e0ff; }
+    .command-hint strong { color:#fff; }
+    .leaderboard-card { display:flex; flex-direction:column; min-height:100%; padding:15px 13px 13px; }
+    .leaderboard-title { display:flex; align-items:center; justify-content:space-between; margin:0 4px 10px; font-size:17px; font-weight:900; }
+    .leaderboard-title span:last-child { color:var(--muted); font-size:13px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .leaders { display:grid; gap:6px; }
+    .leader { display:grid; grid-template-columns:33px minmax(0,1fr) auto; align-items:center; gap:9px; min-height:40px; padding:5px 8px 5px 5px; border:1px solid rgba(255,255,255,.07); border-radius:10px; background:rgba(255,255,255,.045); }
+    .leader-position { display:grid; place-items:center; width:30px; height:30px; border-radius:9px; background:rgba(155,114,255,.15); color:#d9caff; font-size:14px; font-weight:900; }
+    .leader:first-child .leader-position { background:linear-gradient(135deg,#ffdc73,#f2a840); color:#322100; }
+    .leader-name { overflow:hidden; font-size:13px; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+    .leader-points { color:#fff; font-size:13px; font-weight:900; white-space:nowrap; }
+    .empty-ranking { display:grid; flex:1; place-items:center; min-height:180px; padding:20px; color:var(--muted); font-size:15px; line-height:1.45; text-align:center; }
+    .connection-warning { position:fixed; top:24px; left:50%; padding:10px 16px; border:1px solid rgba(255,95,124,.4); border-radius:999px; background:rgba(33,10,17,.88); color:#ffb3c1; font-size:14px; font-weight:800; transform:translateX(-50%); opacity:0; transition:opacity 200ms ease; }
+    .connection-warning.show { opacity:1; }
+    /* V2 additions keep the V1 visual language. */
+    .team-scores { margin-top:10px; display:grid; gap:5px; color:var(--muted); font-size:12px; font-weight:750; }
+    .team-scores:empty { display:none; }
+    .podium-card { padding:20px; filter:drop-shadow(var(--shadow)); }
+    .podium-title { margin:0 0 14px; text-align:center; font-size:18px; font-weight:900; }
+    .podium { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; align-items:end; }
+    .winner { border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.045); padding:15px; text-align:center; }
+    .winner.first { padding-top:26px; border-color:rgba(255,220,115,.45); }
+    .winner-medal { display:grid; place-items:center; width:38px; height:38px; margin:0 auto 8px; border-radius:10px; background:rgba(155,114,255,.15); color:#d9caff; font-weight:900; }
+    .winner.first .winner-medal { background:linear-gradient(135deg,#ffdc73,#f2a840); color:#322100; }
+    .winner-name { font-size:14px; font-weight:850; overflow-wrap:anywhere; }
+    .winner-points { margin-top:4px; color:var(--muted); font-size:12px; font-weight:800; }
+    .no-motion,.no-motion * { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+    .layout-compact { width:min(1120px,calc(100vw - 64px))!important; }
+    .layout-compact .quiz-card { padding:14px 16px; }
+    .layout-compact .question { font-size:clamp(21px,1.5vw,28px); }
+    .layout-minimal { width:min(900px,calc(100vw - 64px))!important; }
+    .layout-minimal .shell { grid-template-columns:1fr; }
+    .layout-minimal .leaderboard-card,.layout-minimal .footerline { display:none!important; }
+    .layout-no-leaderboard .shell { grid-template-columns:1fr; }
+    .layout-no-leaderboard .leaderboard-card { display:none!important; }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
+    @media (max-width:1180px) { .answers { grid-template-columns:repeat(2,minmax(0,1fr)); } .answers[data-count="1"] { grid-template-columns:1fr; } }
+    @media (max-width:1050px) { .shell { grid-template-columns:1fr; } .leaderboard-card { display:none; } }
+    @media (max-width:760px) { #quiz-root { width:calc(100vw - 28px); bottom:18px; } .quiz-card { padding:18px; } .answers,.answers[data-count="1"],.answers[data-count="2"] { grid-template-columns:1fr; } .meta { font-size:13px; } .podium { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <main id="quiz-root" aria-live="polite">
+    <div id="shell" class="shell">
+      <section class="quiz-card">
+        <div class="topline">
+          <div class="brand"><span class="brand-dot"></span><span>Quiz</span></div> <!-- to mozna zmienic na dowolne, pokazuje sie to na overlayu w lewym gornym rogu -->
+          <div class="meta"><span id="timer"></span><span id="status-pill" class="status-pill">Głosowanie</span></div>
+        </div>
+        <h1 id="question" class="question"></h1>
+        <div id="answers" class="answers"></div>
+        <div class="footerline"><span id="hint" class="command-hint"></span><span id="vote-count"></span></div>
+      </section>
+      <aside class="leaderboard-card">
+        <div class="leaderboard-title"><span>Ranking</span><span id="top-label">Top 5</span></div>
+        <div id="leaders" class="leaders"></div>
+        <div id="empty-ranking" class="empty-ranking">Ranking pojawi się po przyznaniu pierwszych punktów.</div>
+        <div id="team-scores" class="team-scores"></div>
+      </aside>
+    </div>
+    <section id="podium-card" class="podium-card" hidden><h2 class="podium-title">Quiz - Podium</h2><div id="podium-winners" class="podium"></div></section>
+  </main>
+  <div id="connection-warning" class="connection-warning">Brak połączenia ze Streamer.bot</div>
+  <script>(() => {
+'use strict';
+const UI_BUILD='FC1', CLIENT_PATCH='STYLE4';
+const RANKING_MUTATIONS=new Set(['setscore','resetscores','importscores','restoreimportbackup','restorebackup','restoresnapshot','reveal','rescore','undo']);
+const APP_VERSION='2.0.0',ACTION_NAME='QUIZ - Silnik',MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
+const LOOPBACK_HOSTS=new Set(['127.0.0.1','localhost']);
+const $=id=>document.getElementById(id);
+const overlayRoot=$('quiz-root'),questionEl=$('question'),answersEl=$('answers'),statusEl=$('status-pill'),timerEl=$('timer'),hintEl=$('hint'),voteCountEl=$('vote-count'),leadersEl=$('leaders'),emptyRankingEl=$('empty-ranking'),warningEl=$('connection-warning'),teamScoresEl=$('team-scores'),shell=$('shell'),podiumCard=$('podium-card'),podiumWinners=$('podium-winners'),topLabel=$('top-label');
+let roundState=null,lastRevision=-1,serverClockOffset=0,previousRoundId='',previousRoundStatus='',podiumWasVisible=false,audioContext=null,lastCountdownSecond=-1;
+
+function parseSocketMessage(raw){if(typeof raw!=='string'||raw.length>MAX_SOCKET_MESSAGE_LENGTH)return null;try{return JSON.parse(raw);}catch{return null;}}
+function isTrustedPageOrigin(){return location.protocol==='http:'&&LOOPBACK_HOSTS.has(location.hostname.toLowerCase());}
+function normalizeWebSocketUrl(raw){const candidate=String(raw||'').trim();if(!candidate||candidate.length>512)throw Error('Nieprawidłowy adres WebSocket.');let url;try{url=new URL(candidate);}catch{throw Error('Nieprawidłowy adres WebSocket.');}if(url.protocol!=='ws:'||!LOOPBACK_HOSTS.has(url.hostname.toLowerCase()))throw Error('Overlay może łączyć się tylko z lokalnym WebSocketem.');if(url.username||url.password||url.search||url.hash)throw Error('Nieprawidłowy lokalny adres WebSocket.');if(url.port){const p=Number(url.port);if(!Number.isInteger(p)||p<1||p>65535)throw Error('Nieprawidłowy port WebSocket.');}return url.href;}
+function bytesToBase64(bytes){let binary='';for(let offset=0;offset<bytes.length;offset+=8192){const chunk=bytes.subarray(offset,Math.min(offset+8192,bytes.length));binary+=String.fromCharCode(...chunk);}return btoa(binary);}
+async function sha256Base64(value){if(!window.crypto?.subtle||!window.TextEncoder)throw Error('OBS Browser nie obsługuje wymaganego SHA-256.');const bytes=new TextEncoder().encode(String(value));const digest=await crypto.subtle.digest('SHA-256',bytes);return bytesToBase64(new Uint8Array(digest));}
+async function buildAuthentication(password,salt,challenge){if(!salt||!challenge)throw Error('Streamer.bot nie przesłał danych uwierzytelniania.');const secret=await sha256Base64(String(password)+String(salt));return sha256Base64(secret+String(challenge));}
+
+function authenticatedInfo(socket, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const id = 'quiz-enforce-control-' + crypto.randomUUID();
+    let done = false;
+    const finish = ok => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      socket.removeEventListener('message', message);
+      socket.removeEventListener('close', closed);
+      socket.removeEventListener('error', closed);
+      if (ok) resolve();
+      else reject(Error('Nie można potwierdzić Enforce: brak odpowiedzi GetInfo na zalogowanym połączeniu.'));
+    };
+    const message = event => {
+      const p = parseSocketMessage(event.data);
+      if (p?.id === id) finish(p.status === 'ok');
+    };
+    const closed = () => finish(false);
+    const timer = setTimeout(closed, timeoutMs);
+    socket.addEventListener('message', message);
+    socket.addEventListener('close', closed);
+    socket.addEventListener('error', closed);
+    if (socket.readyState !== WebSocket.OPEN) { finish(false); return; }
+    try { socket.send(JSON.stringify({request:'GetInfo', id})); }
+    catch { finish(false); }
+  });
+}
+
+async function verifyEnforce(rawUrl, authenticatedSocket, timeoutMs = 3500) {
+  await authenticatedInfo(authenticatedSocket, timeoutMs);
+  const result = await new Promise(resolve => {
+    let socket = null, sent = false, done = false;
+    const id = 'quiz-enforce-probe-' + crypto.randomUUID();
+    const finish = (enforced, detail = '') => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      if (socket && socket.readyState < WebSocket.CLOSING) socket.close();
+      resolve({enforced, detail});
+    };
+    const timer = setTimeout(() => finish(null, 'limit czasu sondy'), timeoutMs);
+    try { socket = new WebSocket(rawUrl); }
+    catch { finish(null, 'nie można otworzyć sondy'); return; }
+    socket.addEventListener('message', event => {
+      const p = parseSocketMessage(event.data);
+      if (!p) return;
+      if (p.request === 'Hello' && !sent) {
+        if (!p.authentication?.salt || !p.authentication?.challenge) { finish(false); return; }
+        sent = true;
+        try { socket.send(JSON.stringify({request:'GetInfo', id})); }
+        catch { finish(null, 'nie można wysłać sondy'); }
+        return;
+      }
+      if (sent && p.id === id) {
+        if (p.status === 'ok') finish(false);
+        else if (p.status === 'error' && /auth/i.test(String(p.error || p.message || ''))) finish(true);
+        else finish(null, 'nierozpoznana odpowiedź sondy');
+      }
+    });
+    socket.addEventListener('close', event => {
+      const rejected = sent && event.wasClean && [1000,1005,1008,4009].includes(event.code);
+      finish(rejected ? true : null, 'sonda close=' + event.code + ', clean=' + event.wasClean);
+    });
+    socket.addEventListener('error', () => finish(null, 'błąd transportu sondy'));
+  });
+  if (result.enforced === null) throw Error('Nie można potwierdzić Enforce: ' + result.detail + '. Hasło zostało zaakceptowane.');
+  if (!result.enforced) return false;
+  await authenticatedInfo(authenticatedSocket, timeoutMs);
+  return true;
+}
+
+function showWarning(text){warningEl.textContent=String(text||'Brak bezpiecznego połączenia').slice(0,220);warningEl.classList.add('show');}
+function hideWarning(){warningEl.classList.remove('show');}
+
+class QuizConnection {
+ constructor(onData,onStatus,bootstrap=['sync','getscores','getdata']){this.onData=onData;this.onStatus=onStatus;this.bootstrap=bootstrap;this.socket=null;this.password='';this.url='';this.authenticated=false;this.generation=0;this.counter=0;this.reconnect=true;this.authId='';this.subId='';this.enforce=false;this.timer=null;this.engineReady=false;this.pending=new Map();this.readRetryTimers=new Set();}
+ async connect(url,password){
+  const generation=++this.generation;this.engineReady=false;this.failPending('Połączenie zmienione - wynik operacji niepotwierdzony.');clearTimeout(this.timer);if(this.socket)this.socket.close();this.socket=null;this.authenticated=false;this.subId='';this.enforce=false;
+  try{if(!isTrustedPageOrigin())throw Error('Otwórz stronę przez lokalny HTTP Server (127.0.0.1).');this.url=normalizeWebSocketUrl(url);if(typeof password!=='string'||password.length<12||password.length>256)throw Error('Hasło: 12-256 znaków.');this.password=password;this.reconnect=true;
+   const socket=new WebSocket(this.url);this.socket=socket;this.onStatus('Łączenie i uwierzytelnianie…',false);
+   socket.addEventListener('message',async event=>{
+    if(this.socket!==socket||generation!==this.generation)return;
+    const p=parseSocketMessage(event.data);if(!p)return;
+    try{
+     if(p.request==='Hello'){
+      if(!p.authentication?.salt||!p.authentication?.challenge)throw Error('Włącz Authentication + Enforce.');
+      this.authId='quiz-auth-'+generation+'-'+(++this.counter);
+      const authentication=await buildAuthentication(this.password,p.authentication.salt,p.authentication.challenge);
+      if(this.socket===socket&&generation===this.generation)socket.send(JSON.stringify({request:'Authenticate',id:this.authId,authentication}));return;
+     }
+     if(p.id===this.authId){
+      if(p.status!=='ok')throw Error('Błędne hasło WebSocket.');
+      const enforce=await verifyEnforce(this.url,socket);
+      if(this.socket!==socket||generation!==this.generation)return;
+      if(enforce!==true)throw Error(enforce===false?'Enforce jest wyłączone.':'Nie można potwierdzić Enforce.');
+      this.enforce=true;this.subId='quiz-sub-'+generation+'-'+(++this.counter);this.onStatus('Authentication + Enforce OK - subskrypcja General.Custom…',false);
+      socket.send(JSON.stringify({request:'Subscribe',id:this.subId,events:{General:['Custom']}}));return;
+     }
+     if(p.id===this.subId){
+      if(p.status!=='ok')throw Error('Nie udało się zasubskrybować General.Custom.');
+      this.authenticated=true;this.onStatus('Authentication + Enforce OK - sprawdzam wersję silnika…',false);this.action('diagnostics');return;
+     }
+     if(!this.authenticated)return;
+     if(p.id&&this.pending.has(p.id)&&p.status==='error'){const job=this.pending.get(p.id);clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.id);this.onData({type:job.read?'quiz-read-error':'quiz-error',requestId:p.id,operation:job.op,message:'Streamer.bot odrzucił żądanie. Sprawdź nazwę i stan Action QUIZ - Silnik.'});return;}
+     const seen=new Set();const walk=(v,depth=0)=>{if(depth>7||seen.size>100000)return;if(typeof v==='string'&&v.length<MAX_SOCKET_MESSAGE_LENGTH){try{v=JSON.parse(v);}catch{return;}}
+      if(!v||typeof v!=='object'||seen.has(v))return;seen.add(v);
+      if(typeof v.type==='string'&&v.type.startsWith('quiz-')){this.handle(v);return;}
+      if(v.status==='ok'&&v.variable?.name==='localQuiz_public_v2'){walk(v.variable.value,depth+1);return;}
+      for(const child of Object.values(v))if(child&&typeof child==='object'||typeof child==='string')walk(child,depth+1);
+     };walk(p);
+    }catch(error){this.reconnect=false;this.authenticated=false;this.onStatus(error.message,false);socket.close();}
+   });
+   socket.addEventListener('close',()=>{if(this.socket!==socket)return;this.socket=null;this.authenticated=false;this.engineReady=false;this.failPending('Rozłączono - wynik operacji niepotwierdzony. Odśwież ranking po połączeniu.');if(this.reconnect){this.onStatus('Rozłączono - ponowne połączenie…',false);this.timer=setTimeout(()=>this.connect(this.url,this.password),2500);}});
+   socket.addEventListener('error',()=>{if(this.socket===socket)this.onStatus('Brak połączenia WebSocket.',false);});
+  }catch(error){this.reconnect=false;this.onStatus(error.message,false);}
+ }
+ failPending(message){for(const[id,job]of this.pending){clearTimeout(job.timer);clearTimeout(job.lateTimer);if(!job.read)this.onData({type:'quiz-error',requestId:id,message});}this.pending.clear();for(const timer of this.readRetryTimers)clearTimeout(timer);this.readRetryTimers.clear();}
+ readPayloadMatches(op,p){const types={sync:'quiz-state',tick:'quiz-state',getscores:'quiz-scores',getdata:'quiz-data',diagnostics:'quiz-diagnostics',exportbackup:'quiz-download',exportbank:'quiz-download',previewbackup:'quiz-preview',previewbank:'quiz-preview'};if(p.type!==types[op])return false;return !['exportbackup','exportbank','previewbackup','previewbank'].includes(op)||p.kind===(op.endsWith('backup')?'backup':'bank');}
+ handle(p){
+  if(p.type==='quiz-receipt'){
+   const job=this.pending.get(p.requestId);
+   if(!job||job.received||p.build!==UI_BUILD||p.operation!==job.op)return;
+   job.received=true;job.timedOut=false;clearTimeout(job.timer);clearTimeout(job.lateTimer);job.lateTimer=null;
+   job.timer=setTimeout(job.onTimeout,30000);if(!job.read)this.onData({type:'quiz-received',requestId:p.requestId,operation:job.op});return;
+  }
+  if(p.type==='quiz-diagnostics'){
+   if(!this.pending.has(p.requestId)){if(!this.engineReady&&p.build!==UI_BUILD)this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień C# i odśwież pliki.`,false);return;}
+   if(p.build!==UI_BUILD||p.protocol!==1){this.engineReady=false;this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień kod C# i odśwież pliki.`,false);this.onData(p);return;}
+   if(!this.engineReady){this.engineReady=true;this.onStatus('PASS - Authentication + Enforce - '+UI_BUILD+' - '+CLIENT_PATCH,true);for(const op of this.bootstrap)this.action(op);}
+  }
+  const payloadJob=this.pending.get(p.requestId);
+  if(payloadJob?.read&&p.build===UI_BUILD&&p.operation===payloadJob.op&&Number.isSafeInteger(p.revision)&&this.readPayloadMatches(payloadJob.op,p)){
+   this.onData(p);clearTimeout(payloadJob.timer);clearTimeout(payloadJob.lateTimer);this.pending.delete(p.requestId);this.onData({type:'quiz-read-ok',operation:payloadJob.op});return;
+  }
+  if(p.type==='quiz-result'||p.type==='quiz-error'){
+   const job=this.pending.get(p.requestId);
+   if(!job){if(p.type==='quiz-error'&&!p.requestId)this.onData(p);return;}
+   if(p.type==='quiz-result'&&(p.build!==UI_BUILD||p.operation!==job.op||p.ok!==true||!Number.isSafeInteger(p.revision))){this.onData({type:job.read?'quiz-read-error':'quiz-error',operation:job.op,requestId:p.requestId,message:'Nieprawidłowa odpowiedź silnika. Sprawdź zgodność kodu C# z panelem.'});return;}
+   if(p.type==='quiz-result'&&job.read){job.acknowledged=true;return;}
+   clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.requestId);
+   if(p.type==='quiz-result'){if(!job.read)this.onData({type:'quiz-confirmed',requestId:p.requestId,operation:job.op,revision:p.revision});return;}
+   if(job.read){this.onData({...p,type:'quiz-read-error',operation:job.op});return;}
+  }
+  this.onData(p);
+ }
+ action(op,args={},readRetry=0){if(!this.authenticated||this.socket?.readyState!==WebSocket.OPEN||(!this.engineReady&&op!=='diagnostics'))return false;
+  const id=crypto.randomUUID(),normalized={};for(const[k,v]of Object.entries(args))normalized[k]=String(v);
+  const read=['sync','tick','getscores','getdata','diagnostics','exportbackup','exportbank','previewbackup','previewbank'].includes(op);
+  if(read&&[...this.pending.values()].some(x=>x.op===op))return true;
+  const job={op,read,timer:null,lateTimer:null,received:false,timedOut:false};
+  job.onTimeout=()=>{
+   if(this.pending.get(id)!==job)return;
+   if(read){
+    this.pending.delete(id);
+    const labels={getscores:'rankingu',getdata:'danych panelu',sync:'stanu rundy',tick:'stanu rundy',diagnostics:'diagnostyki',exportbackup:'backupu',exportbank:'szablonów',previewbackup:'podglądu backupu',previewbank:'podglądu szablonów'};
+    const retryEligible=readRetry===0&&['sync','tick','getscores','getdata','diagnostics'].includes(op);
+    this.onData({type:'quiz-read-error',requestId:id,operation:op,message:'Nie udało się odświeżyć '+(labels[op]||'danych')+'. '+(retryEligible?'Ponawiam odczyt.':'Sprawdź połączenie ze Streamer.bot i użyj Odśwież.')});
+    if(retryEligible){const retryTimer=setTimeout(()=>{this.readRetryTimers.delete(retryTimer);if(this.authenticated)this.action(op,args,1);},1000);this.readRetryTimers.add(retryTimer);}return;
+   }
+   else{job.timedOut=true;job.lateTimer=setTimeout(()=>{if(this.pending.get(id)===job)this.pending.delete(id);},60000);}
+   const message='Brak potwierdzenia silnika dla '+op+'. '+(job.received?'Silnik odebrał żądanie, ale jeszcze nie potwierdził zapisu. ':'')+'Wynik nieznany - odśwież dane i sprawdź build oraz log RECEIVED/COMMITTED.';
+   if(op==='diagnostics')this.onStatus(message,false);this.onData({type:'quiz-error',requestId:id,message});
+  };
+  job.timer=setTimeout(job.onTimeout,8000);this.pending.set(id,job);
+  const envelope={Protocol:1,Build:UI_BUILD,Id:id,Operation:op,Args:normalized};
+  const hostArgs={quizOperation:op,quizRequest:JSON.stringify(envelope),lqeRequestId:id};
+  if(RANKING_MUTATIONS.has(op))Object.assign(hostArgs,normalized);
+  if(!read)this.onData({type:'quiz-pending',requestId:id,operation:op});
+  try{this.socket.send(JSON.stringify({request:'DoAction',action:{name:ACTION_NAME},args:hostArgs,id}));return true;}
+  catch{clearTimeout(job.timer);this.pending.delete(id);this.onData({type:read?'quiz-read-error':'quiz-error',requestId:id,operation:op,message:'Nie udało się wysłać żądania do silnika. Połącz panel ponownie.'});return false;}
+ }
+ sync(){if(this.authenticated){this.action('sync');this.socket.send(JSON.stringify({request:'GetGlobal',variable:'localQuiz_public_v2',persisted:false,id:'quiz-global-'+(++this.counter)}));}}
+ close(){this.reconnect=false;this.engineReady=false;this.failPending('Połączenie zamknięte.');clearTimeout(this.timer);this.socket?.close();this.password='';}
+}
+
+function validateState(p){if(!p||p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||!['idle','open','locked','revealed','cancelled'].includes(p.status)||typeof p.question!=='string'||p.question.length>500||!Array.isArray(p.options)||p.options.length>12||!Array.isArray(p.leaderboard)||p.leaderboard.length>10)return false;const o=p.overlay;if(!o||!/^#[a-f0-9]{6}$/i.test(o.Accent)||!['FULL','COMPACT','MINIMAL','NO_LEADERBOARD'].includes(o.Layout))return false;for(const[k,min,max]of [['Scale',40,150],['X',0,1800],['Y',0,1000],['Top',1,10],['Opacity',10,100],['Volume',0,100]])if(!Number.isInteger(o[k])||o[k]<min||o[k]>max)return false;return p.options.every(x=>x&&typeof x.id==='string'&&x.id.length<=80&&typeof x.text==='string'&&x.text.length<=240&&Number.isInteger(x.count)&&x.count>=0&&x.count<=25000)&&Number.isInteger(p.totalVotes)&&p.totalVotes>=0&&p.totalVotes<=25000;}
+function tone(kind){const o=roundState?.overlay;if(!o?.Sounds||o.Volume===0)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();audioContext.resume().catch(()=>{});const tones=kind==='podium'?[523,659,784]:kind==='reveal'?[659,880]:kind==='lock'?[330]:[440];tones.forEach((hz,i)=>{const start=audioContext.currentTime+i*.13,osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.frequency.value=hz;gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(o.Volume/100*.12,start+.01);gain.gain.exponentialRampToValueAtTime(.0001,start+.16);osc.connect(gain);gain.connect(audioContext.destination);osc.start(start);osc.stop(start+.18);});}catch{}}
+function setHintStrong(prefix,strongText){hintEl.replaceChildren(document.createTextNode(prefix));const strong=document.createElement('strong');strong.textContent=strongText;hintEl.append(strong);}
+function renderStatus(p){statusEl.className='status-pill';if(p.status==='locked'){statusEl.classList.add('locked');statusEl.textContent=p.mode==='POLL'?'Ankieta zamknięta':'Głosowanie zamknięte';}else if(p.status==='revealed'){statusEl.classList.add('revealed');statusEl.textContent=p.mode==='POLL'?'Wyniki ankiety':'Poprawna odpowiedź';}else statusEl.textContent=p.mode==='POLL'?'Ankieta trwa':'Głosowanie otwarte';}
+function renderAnswers(p){answersEl.replaceChildren();answersEl.dataset.count=String(p.options.length);const total=Math.max(0,Number(p.totalVotes||0));for(const option of p.options){const count=Math.max(0,Number(option.count||0)),percentage=total>0?Math.round(count/total*100):0,item=document.createElement('div');item.className='answer';if(p.status==='revealed'&&p.mode==='QUIZ'&&option.correct)item.classList.add('correct');else if(p.status==='revealed'&&p.mode==='QUIZ'&&option.partial)item.classList.add('adjacent');const fill=document.createElement('div');fill.className='answer-fill';fill.style.width=p.distribution?`${percentage}%`:'0%';const inner=document.createElement('div');inner.className='answer-inner';const index=document.createElement('span');index.className='answer-index';index.textContent='!'+option.index;const text=document.createElement('span');text.className='answer-text';text.textContent=option.text||'';const score=document.createElement('span');score.className='answer-score';if(p.distribution){let value=`${count}`;if(p.overlay.Percentages)value+=` · ${percentage}%`;if(p.status==='revealed'&&Number(option.points)>0)value+=` · +${Number(option.points)} pkt`;score.textContent=value;}else score.textContent='';inner.append(index,text,score);item.append(fill,inner);answersEl.append(item);}if(p.status==='open')setHintStrong('Wpisz na czacie ',`!1-!${p.options.length}`);else if(p.status==='locked')hintEl.textContent=p.mode==='POLL'?'Ankieta została zamknięta':'Czekamy na ujawnienie poprawnej odpowiedzi';else if(p.mode==='POLL')hintEl.textContent='Wyniki ankiety';else{const correct=p.options.filter(x=>x.correct);hintEl.textContent=correct.length?`Odpowiedź: ${correct.map(x=>'!'+x.index+' '+x.text).join(' - ')}`:'Wynik rundy';}voteCountEl.textContent=p.countsVisible?`${total} ${total===1?'głos':total%10>=2&&total%10<=4&&!(total%100>=12&&total%100<=14)?'głosy':'głosów'}`:'';}
+function renderRanking(p){leadersEl.replaceChildren();const top=p.leaderboard.slice(0,p.overlay.Top);topLabel.textContent='Top '+p.overlay.Top;emptyRankingEl.style.display=top.length?'none':'grid';for(const leader of top){const row=document.createElement('div');row.className='leader';const position=document.createElement('span');position.className='leader-position';position.textContent=leader.position;const name=document.createElement('span');name.className='leader-name';name.textContent=String(leader.userName||'Widz').slice(0,80);const points=document.createElement('span');points.className='leader-points';points.textContent=`${Number(leader.points||0)} pkt`;row.append(position,name,points);leadersEl.append(row);}teamScoresEl.replaceChildren();if(p.teamMode&&Array.isArray(p.teams))for(const team of p.teams.slice(0,10)){const row=document.createElement('div');row.textContent=`${String(team.name||'Drużyna').slice(0,80)} - ${Number(team.points||0)} pkt`;teamScoresEl.append(row);}}
+function renderPodium(p){podiumWinners.replaceChildren();for(const index of [1,0,2]){const l=p.leaderboard[index];if(!l)continue;const card=document.createElement('div');card.className='winner'+(index===0?' first':'');const medal=document.createElement('div');medal.className='winner-medal';medal.textContent=index+1;const name=document.createElement('div');name.className='winner-name';name.textContent=String(l.userName||'Widz').slice(0,80);const points=document.createElement('div');points.className='winner-points';points.textContent=`${Number(l.points||0)} pkt`;card.append(medal,name,points);podiumWinners.append(card);}}
+function updateTimer(){const p=roundState;if(!p){timerEl.textContent='';return;}const ms=p.paused?p.remainingMs:p.closesAt-(Date.now()+serverClockOffset),left=Math.max(0,Math.ceil(ms/1000));timerEl.textContent=p.overlay.Timer&&p.status==='open'&&(p.paused||p.closesAt>0)?`${p.paused?'PAUZA - ':''}${left} s`:'';if(p.status==='open'&&!p.paused&&p.closesAt>0&&left>0&&left<=5&&left!==lastCountdownSecond){lastCountdownSecond=left;tone('tick');}}
+function applyLayout(p){const o=p.overlay;overlayRoot.style.setProperty('--accent',o.Accent);overlayRoot.style.setProperty('--overlay-scale',String(o.Scale/100));const dx=o.X-40,dy=o.Y-40;overlayRoot.style.left=`calc(50% + ${dx}px)`;overlayRoot.style.bottom=`${40-dy}px`;overlayRoot.className=[p.visible&&(p.status!=='idle'||p.podium)?'visible':'',o.Layout==='COMPACT'?'layout-compact':o.Layout==='MINIMAL'?'layout-minimal':'',(!o.Leaderboard||o.Layout==='NO_LEADERBOARD')?'layout-no-leaderboard':'',!o.Animations?'no-motion':''].filter(Boolean).join(' ');overlayRoot.style.opacity=p.visible?String(o.Opacity/100):'0';}
+function receive(p){if(p.type==='quiz-read-error'){showWarning(p.message);return;}if(p.type==='quiz-read-ok'){hideWarning();return;}if(p.type!=='quiz-state'||!validateState(p)||p.revision<lastRevision)return;if(p.revision===lastRevision&&roundState){serverClockOffset=Number(p.serverNow)-Date.now();return;}lastRevision=p.revision;serverClockOffset=Number(p.serverNow)-Date.now();roundState=p;applyLayout(p);shell.hidden=Boolean(p.podium);podiumCard.hidden=!p.podium;if(p.podium)renderPodium(p);else{questionEl.textContent=p.question||'Quiz';renderStatus(p);renderAnswers(p);renderRanking(p);}if(previousRoundId===p.roundId){if(previousRoundStatus!==p.status&&p.status==='locked')tone('lock');if(previousRoundStatus!==p.status&&p.status==='revealed')tone('reveal');}else lastCountdownSecond=-1;if(!podiumWasVisible&&p.podium&&previousRoundId)tone('podium');previousRoundId=p.roundId;previousRoundStatus=p.status;podiumWasVisible=p.podium;updateTimer();}
+
+const params=new URLSearchParams(location.search),fragment=new URLSearchParams(location.hash.replace(/^#/,''));
+const connection=new QuizConnection(receive,(text,ok)=>{if(ok){lastRevision=-1;roundState=null;hideWarning();}else showWarning(text);},['sync']);
+if(params.get('demo')==='1')receive({type:'quiz-state',appVersion:APP_VERSION,revision:1,serverNow:Date.now(),status:'revealed',visible:true,question:'Który killer pojawił się jako pierwszy w Dead by Daylight?',roundId:'demo',mode:'QUIZ',distribution:true,countsVisible:true,totalVotes:100,closesAt:0,paused:false,remainingMs:0,overlay:{Layout:'FULL',Accent:'#9870ff',Scale:100,X:40,Y:40,Leaderboard:true,Top:5,Percentages:true,Timer:true,Opacity:100,Animations:true,Sounds:false,Volume:40,Podium:false},podium:false,options:['Trapper','Nurse','Huntress','Doctor'].map((text,i)=>({id:'demo-'+i,index:i+1,text,count:[65,20,10,5][i],correct:i===0,partial:i===1,points:i===0?3:i===1?1:0})),leaderboard:['Widz_007','Widz_02','Widz_03','Widz_04','Widz_05'].map((userName,i)=>({position:i+1,userName,points:25-i*3})),teams:[],teamMode:false});else connection.connect(fragment.get('ws')||'ws://127.0.0.1:8080/',fragment.get('password')||'');
+setInterval(updateTimer,250);setInterval(()=>connection.sync(),3000);window.addEventListener('beforeunload',()=>connection.close());
+})();</script>
+</body>
+</html>
