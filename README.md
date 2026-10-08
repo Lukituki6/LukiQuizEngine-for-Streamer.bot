@@ -10,14 +10,15 @@ overlay do OBS, głosowanie z czatu, punktacja i trwały ranking.
 System działa na komputerze streamera. Nie wymaga hostingu, bazy danych,
 abonamentu ani dodatkowego klucza API.
 
+Lista zmian i aktualizacji: [CHANGELOG.md](CHANGELOG.md)
+
+Instrukcja przejścia ze starszej wersji jest w [MIGRATION.md](MIGRATION.md)
+
 ## Informacja dotycząca użycia AI
 
 Przez dużą ilość błędów jak i skomplikowanych funkcji, postanowiłem końcowo wesprzeć się pomocą AI. Także kod był pisany wspomagając się sztuczną inteligencją w celu przyśpieszenia procesu pracy.
 
 **AI-assisted**
-
-Lista zmian i aktualizacji: [CHANGELOG.md](CHANGELOG.md)
-Instrukcja przejścia ze starszej wersji jest w [MIGRATION.md](MIGRATION.md)
 
 # Informacje o wydaniu 2.0.0
 
