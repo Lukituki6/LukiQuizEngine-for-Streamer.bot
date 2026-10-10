@@ -208,6 +208,104 @@ Automatyczne wiadomości o rozpoczęciu, zamknięciu i wyniku rundy są domyśln
 wyciszone. Bot nadal odpowiada na `!punkty`, `!ranking` oraz polecenia
 administracyjne.
 
+<details>
+<summary><strong>Opcjonalna modyfikacja - dodatkowy tekst podczas głosowania (kliknij, aby rozwinąć)</strong></summary>
+
+## Opcjonalna modyfikacja - dodatkowy tekst podczas głosowania
+
+W LukiQuizEngine v1.3.0 można samodzielnie zmienić sposób rozpoznawania głosów na czacie Twitch.
+
+Domyślnie silnik akceptuje wyłącznie komendy `!1` do `!12`, bez dodatkowych wiadomości.
+
+Przygotowałem dwa warianty modyfikacji. **Wybierz tylko jeden z nich**, zależnie od tego, jak chcesz, aby widzowie głosowali.
+
+### Wariant 1 - Dodatkowy tekst po spacji
+
+Ten wariant pozwala dopisywać wiadomości po numerze odpowiedzi, ale wymaga oddzielenia ich przynajmniej jedną spacją.
+
+**Przykłady:**
+
+- `!1` - działa
+- `!1 siema elo` - działa
+- `!7 pozdrawiam` - działa
+- `!12 XD` - działa
+- `!7 ͏` - działa, również z niewidocznym znakiem po spacji
+- `!1wiadomosc` - nie działa
+- `!7͏` - nie działa, gdy niewidoczny znak występuje bez spacji
+- `!13` - nie działa
+
+**Kod do wklejenia:**
+
+```csharp
+private static readonly Regex VoteRegex =
+    new Regex(@"^!(1[0-2]|[1-9])(?:\s+.*)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+```
+
+**Zaleta:** mniejsze ryzyko przypadkowego rozpoznania innych komend Twitch jako głosów.
+
+---
+
+### Wariant 2 - Dodatkowy tekst bez wymaganej spacji
+
+Ten wariant pozwala dopisywać dowolny tekst bezpośrednio po numerze odpowiedzi.
+
+**Przykłady:**
+
+- `!1` - działa
+- `!1 siema elo` - działa
+- `!1wiadomoscwidzahehe` - działa
+- `!7pozdrawiam` - działa
+- `!12XD` - działa
+- `!7͏` - działa, również z niewidocznym znakiem
+- `!13` - nie działa
+- `!123hehe` - nie działa
+
+**Kod do wklejenia:**
+
+```csharp
+private static readonly Regex VoteRegex =
+    new Regex(@"^!(1[0-2]|[1-9])(?![0-9])", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+```
+
+**Zaleta:** maksymalna swoboda głosowania. Widzowie nie muszą pamiętać o oddzielaniu wiadomości spacją.
+
+**Uwaga:** każda wiadomość zaczynająca się od poprawnego numeru głosu zostanie rozpoznana jako głos. Przykładowo komenda `!1v1` również zostanie potraktowana jako głos na odpowiedź nr 1. Może to powodować konflikty z innymi komendami.
+
+---
+
+### Instrukcja instalacji - dotyczy obu wariantów
+
+1. Otwórz Streamer.bot.
+2. Znajdź akcję `QUIZ - Silnik`.
+3. Otwórz subakcję `Core > C# > Execute C# Code`.
+4. Znajdź oryginalny fragment kodu:
+
+```csharp
+private static readonly Regex VoteRegex =
+    new Regex(@"^!(1[0-2]|[1-9])$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+```
+
+5. Zamień go na kod wybranego wariantu (1 lub 2).
+6. Kliknij `Save and Compile`.
+7. Przetestuj głosowanie podczas otwartej rundy.
+
+Gotowe!
+
+### Ważne informacje
+
+- Oba warianty są opcjonalne.
+- Nie trzeba modyfikować `panel.html` ani `overlay.html`.
+- System punktowania i ranking pozostają bez zmian.
+- Każdy użytkownik nadal posiada jeden aktywny głos, który może zmienić podczas rundy.
+- Tekst dopisany po numerze odpowiedzi jest ignorowany przez silnik.
+- Modyfikacja nie jest domyślnie włączona w v1.3.0.
+- W każdej chwili można przywrócić oryginalny kod.
+
+**Rekomendacja:** Wariant 1 jest bezpieczniejszym wyborem pod względem konfliktów z innymi komendami. Wariant 2 jest wygodniejszy, jeśli zależy Ci na całkowitej swobodzie pisania wiadomości przez widzów.
+
+</details>
+
+
 ## Zawartość repozytorium
 
 | Plik | Zastosowanie |
