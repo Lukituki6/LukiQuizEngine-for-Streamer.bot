@@ -1,5 +1,54 @@
 # Historia zmian - LukiQuizEngine
 
+## 2.0.2 BETA - archiwa rankingów i poprawki stabilności
+
+Wersja 2.0.2 rozbudowuje system V2 o lokalne archiwa rankingów i możliwość przywracania wyników. Wprowadza również poprawki bezpieczeństwa ścieżek plików, integralności archiwów, diagnostyki połączenia oraz obsługi błędów automatycznego rozliczenia.
+
+### Nowe możliwości
+
+- **Automatyczne archiwizowanie rankingu przed resetem**. Jeżeli ranking zawiera dane, silnik zapisuje i weryfikuje archiwum przed wyzerowaniem punktacji. Błąd wymaganej archiwizacji przerywa reset.
+- **Ręczny zapis rankingu** bez resetowania punktów i bez zmiany epoki. Można nadać archiwum własną nazwę.
+- **Przeglądanie archiwów w panelu**. Lista archiwów, wyszukiwanie, sortowanie, podgląd historycznych wyników oraz rozróżnienie zapisów automatycznych i ręcznych.
+- **Przywracanie historycznego rankingu** po potwierdzeniu `PRZYWROC`. Przed przywróceniem silnik tworzy i weryfikuje kopię bezpieczeństwa bieżących wyników.
+- **Przycisk „Otwórz folder archiwów”** dostępny z poziomu zakładki Ranking.
+- Funkcje archiwizacji dostępne w panelu zarówno w trybie **PROSTY**, jak i **ADVANCED**.
+- Domyślne położenie archiwów w Windows: `%LOCALAPPDATA%\LukiQuizEngine\RankingArchives`.
+
+### Naprawy i odporność na błędy
+
+- **Poprawiono obsługę błędu automatycznego rozliczania rundy**. Nieudana finalizacja, np. z powodu przekroczenia limitu punktów lub rozmiaru zapisu, nie powinna zapętlać błędu i blokować diagnostyki oraz świadomego anulowania problematycznej rundy. Silnik zachowuje poprzedni prawidłowy stan i udostępnia informację diagnostyczną `autoFinalizeError`.
+- **Ujednolicono kontrole bezpiecznych ścieżek** dla operacji archiwizacji, w tym automatycznego resetu, katalogów pomocniczych i plików kontrolnych. Rozszerzono kontrolę dowiązań typu `ReparsePoint` w Windows.
+- **Dodano `ContentHash` do nowych automatycznych archiwów** i odpowiednią weryfikację przy odczycie. Starsze archiwa bez tego pola pozostają obsługiwane dla zgodności.
+- **Doprecyzowano diagnostykę Authentication i Enforce**. Niejednoznaczne zamknięcie połączenia nie jest już przedstawiane jako pewny dowód skutecznego Enforce. Komunikaty rozróżniają potwierdzone połączenie od niezweryfikowanej konfiguracji nasłuchu.
+- **Poprawiono obsługę przerwanego ręcznego zapisu archiwum**. Bezpieczne wznowienie jest możliwe, gdy istniejący stan i zapisane dane kontrolne pozwalają odtworzyć identyczne archiwum. W przeciwnym razie operacja jest odrzucana bez przypisywania nowych danych do historycznego zapisu.
+- Poprawiono obsługę potwierdzenia operacji otwierania folderu archiwów w komunikacji panelu i silnika.
+- Zachowano zabezpieczenia przed podwójnym resetem, ponowionym przywracaniem oraz konfliktami identyfikatorów operacji.
+
+### Zgodność i identyfikatory
+
+- Wersja aplikacji: **2.0.2 BETA**.
+- Identyfikator buildu: **`PHoeniX`** (wcześniej `FC1`).
+- Identyfikator poprawki: **`QUPA`** (wcześniej `STYLE4`).
+- Zachowano istniejące zmienne danych V2, w tym `localQuiz_data_v2`, oraz zgodność formatów archiwów poprzednich buildów.
+- Nie jest potrzebny oddzielny serwer, Node.js ani baza danych.
+
+### Znane ograniczenia i uwagi
+
+Wbudowany HTTP Server Streamer.bot udostępnia `/DoAction`, którego nie zabezpiecza automatycznie uwierzytelnienie WebSocket. Projekt przeznaczony jest do lokalnego użytkowania z HTTP i WebSocket przypisanymi do `127.0.0.1`, włączonymi `Authentication` i `Enforce` oraz bez udostępniania portów do sieci. Szczegóły w [README.md](README.md#bezpieczeństwo-i-znane-ograniczenia).
+- Nie jest gwarantowana pełna odporność na jednoczesną awarię procesu lub zasilania podczas zapisu do magazynu Streamer.bot i plików archiwów.
+- Automatyczne czyszczenie starych archiwów nie jest częścią tej aktualizacji. Użytkownik powinien kontrolować wolne miejsce na dysku.
+- Archiwum rankingu nie zastępuje pełnego backupu ustawień, szablonów i pozostałych danych quizu.
+- Testy kodu i JavaScript nie zastępują sprawdzenia konkretnej instalacji Streamer.bot, połączenia Twitch i obrazu w OBS. 
+
+### Aktualizacja z 2.0.0 / 2.0.1 BETA
+
+1. Przed aktualizacją wykonaj eksport rankingu i pełny backup.
+2. Zastąp kod w Action **QUIZ - Silnik** aktualnym `QuizEngine.cs`. Użyj **Find Refs** i **Save and Compile**.
+3. Podmień oba pliki `panel.html` i `overlay.html` z tego samego wydania.
+4. Zachowaj dane globalne V2 i istniejące archiwa. Nie usuwaj wcześniejszych danych migracji.
+5. Odśwież stronę panelu i źródło OBS. Sprawdź działanie quizu oraz archiwizacji na danych testowych.
+
+---
 ## 2.0.1 BETA - mała aktualizacja QoL
 
 ### Mała zmiana QoL
@@ -11,6 +60,7 @@
 
 Jeśli zainstalowana była już wersja 2.0.0 BETA to najszybciej jest podmienić po prostu plik w folderze zmapowanym pod bota: **panel.html** 
 
+---
 ## 2.0.0 BETA - duża aktualizacja
 
 Wersja 2.0.0 przebudowuje quiz praktycznie od podstaw. Nadal wystarczy Streamer.bot, jedna Action z kodem C#, jeden trigger wiadomości Twitcha oraz lokalny panel i overlay HTML. Nie trzeba instalować osobnej aplikacji, Node.js ani zewnętrznej bazy danych.
