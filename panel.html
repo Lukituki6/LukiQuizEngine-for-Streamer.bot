@@ -9,8 +9,9 @@
 .ui-mode-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 30px;background:var(--bg);border-bottom:1px solid var(--line)}.ui-mode-switch{display:flex;gap:5px}.ui-mode-switch button[aria-pressed="true"]{background:#33294e;border-color:var(--accent);color:#d5c7ff}.ui-mode-bar small{flex:1;min-width:180px}button:focus-visible,summary:focus-visible{outline:2px solid var(--green);outline-offset:3px}html[data-ui-mode="simple"] [data-ui-advanced],html[data-ui-mode="advanced"] [data-ui-simple],html[data-ui-mode="simple"] [data-ui-expanded="false"] [data-ui-editor-advanced]{display:none!important}html[data-ui-mode="simple"] [data-ui-expanded="false"] .answer-edit{grid-template-columns:35px minmax(100px,1fr) auto auto}.workspace>main{min-width:0}.ui-question-note{overflow-wrap:anywhere}@media(max-width:650px){.ui-mode-bar{padding:10px 15px;gap:8px}.ui-mode-bar small{flex-basis:100%}.card{padding:15px}.connection input{min-width:0;max-width:100%}html[data-ui-mode="simple"] [data-ui-expanded="false"] .answer-edit{grid-template-columns:28px minmax(0,1fr)}.answer-edit label.field{min-width:0}.answer-edit input[type=text]{min-width:0}.fields>*{min-width:0;max-width:100%}}
 .fields>label.field{min-width:0;max-width:100%;grid-template-columns:minmax(0,1fr)}@media(max-width:1100px){.answer-edit{grid-template-columns:35px minmax(0,1fr)}.answer-edit>label.field,.answer-edit>button{grid-column:2}.answer-edit>label.field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.answer-edit>label.field input{min-width:0}}
 .ui-question-toggle[aria-expanded="false"]{border-color:var(--green);background:#123a31;color:var(--green)}.ui-question-toggle[aria-expanded="true"]{border-color:var(--red);background:#3b1e2b;color:var(--red)}
+#ranking-operation-status,#archive-folder-status,#ranking-archive-status,#archive-preview-meta,#restore-archive-summary{overflow-wrap:anywhere}.archive-table{min-width:720px}.archive-toolbar input{flex:1;min-width:140px}.archive-history-note{border-left:3px solid var(--accent);padding-left:12px}.archive-pagination{justify-content:space-between}.archive-pagination .row{margin:0}.archive-name{overflow-wrap:anywhere;max-width:280px}#archive-save-name{width:100%}#archive-preview{scroll-margin-top:90px}#archive-restore-check{border-color:var(--accent)}
 </style></head><body>
-<header><div><div class="tag">BETA - mogą wystąpić problemy </div><h1>LukiQuizEngine <small>v2.0.1</small></h1></div><div id="connection-status" role="status">Wpisz hasło WebSocket</div></header>
+<header><div><div class="tag">BETA - mogą wystąpić problemy </div><h1>LukiQuizEngine <small>v2.0.2</small></h1></div><div id="connection-status" role="status">Wpisz hasło WebSocket</div></header>
 <div class="ui-mode-bar"><span>Tryb panelu</span><div class="ui-mode-switch" role="group" aria-label="Tryb panelu"><button id="ui-mode-simple" type="button" aria-pressed="true">PROSTY</button><button id="ui-mode-advanced" type="button" aria-pressed="false">ADVANCED</button></div><small id="ui-mode-status" role="status">PROSTY - pytanie, runda, szablony, ranking, historia i pomoc.</small></div>
 <div class="connection"><input id="ws-url" aria-label="Lokalny WebSocket" value="ws://127.0.0.1:8080/" maxlength="512"><input id="ws-password" aria-label="Hasło WebSocket" type="password" minlength="12" maxlength="256" autocomplete="off" placeholder="Hasło WebSocket"><button id="connect" class="primary">Połącz bezpiecznie</button><button id="copy-overlay">Skopiuj URL overlayu</button><small>Hasło pozostaje w pamięci karty. Authentication + Enforce wymagane.</small></div>
 <p id="read-status" class="connection hint" role="status" hidden></p>
@@ -21,10 +22,10 @@
 <section id="bank" class="tab"><div class="card"><h2>Szablony</h2><div class="fields"><input id="bank-search" placeholder="Szukaj treści, nazwy, tagu" maxlength="500"><input id="bank-category" placeholder="Filtr kategorii" maxlength="80"><input id="bank-tag" placeholder="Filtr tagu" maxlength="40"><select id="bank-sort"><option value="name">Nazwa A-Z</option><option value="category">Kategoria</option></select><button data-action="exportbank">Eksport szablonów JSON</button><button id="import-bank">Import szablonów JSON</button></div><p class="hint">To jest jedyny system zapisanych pytań w V2. Stare szablony v1 oraz wcześniejsze „Szablony” V2 są automatycznie scalane tutaj. Każde „Zapisz jako szablon” tworzy nową pozycję.</p><div id="bank-list"></div></div></section>
 <section id="sets" class="tab"><div class="card"><h2>Zestawy / Kolejka</h2><p class="hint"><strong>Zestaw = playlista pytań.</strong> Np. „DBD Quiz #1” może zawierać 10 szablonów. Wczytujesz zestaw, a potem przyciskami Następne/Poprzednie odpalasz kolejne pytania bez ręcznego wyszukiwania ich w Szablonach.</p><div class="row"><button id="new-set">Nowy zestaw</button><select id="sets-select"></select><button id="edit-set">Edytuj zestaw</button><button id="load-set" class="primary">Wczytaj kolejkę</button><label><input id="shuffle-set" type="checkbox">Losuj kolejność</label><button id="delete-set" class="danger">Usuń zestaw</button></div><div id="set-editor" hidden><label class="field">Nazwa zestawu<input id="set-name" maxlength="80"></label><div class="row"><select id="set-add-select"></select><button id="set-add-question">Dodaj z szablonów</button><button id="set-add-draft">Dodaj bieżący szkic</button><button id="save-set" class="primary">Zapisz zestaw</button></div><div id="set-questions"></div></div></div></section>
 
-<section id="ranking" class="tab"><div class="card"><h2>Ranking / CSV</h2><div class="row"><button data-action="getscores">Odśwież</button><button id="export-csv">Eksport CSV</button><button id="import-csv">Import CSV</button><button id="undo-import">Cofnij import CSV</button><button id="reset-scores" class="danger">Reset rankingu</button><input id="rank-search" placeholder="Szukaj widza" maxlength="80"></div><p id="ranking-operation-status" role="status" class="hint" hidden></p><div class="scroll"><table><thead><tr><th>#</th><th>Widz</th><th>Twitch User ID</th><th>Poprawne</th><th>Punkty</th><th></th></tr></thead><tbody id="ranking-body"></tbody></table></div><p class="hint">Korekta/import/reset tworzą nową epokę: stare rundy zachowują historię, ale nie można ich już przeliczyć. Przed zmianą silnik tworzy snapshot.</p></div></section>
+<section id="ranking" class="tab"><div class="card"><h2>Ranking / CSV</h2><div class="row"><button data-action="getscores">Odśwież</button><button id="export-csv">Eksport CSV</button><button id="import-csv">Import CSV</button><button id="undo-import">Cofnij import CSV</button><button id="reset-scores" class="danger">Reset rankingu</button><button id="save-ranking-archive" type="button">Zapisz ranking</button><button id="open-archive-folder" type="button">Otwórz folder archiwów</button><input id="rank-search" placeholder="Szukaj widza" maxlength="80"></div><p class="hint">Przed resetem ranking zostanie automatycznie zapisany w lokalnym archiwum. Pusty ranking nie tworzy archiwum. Błąd zapisu archiwum blokuje reset.</p><p id="ranking-operation-status" role="status" class="hint" hidden></p><p id="archive-folder-status" role="status" class="hint" hidden></p><div class="scroll"><table><thead><tr><th>#</th><th>Widz</th><th>Twitch User ID</th><th>Poprawne</th><th>Punkty</th><th></th></tr></thead><tbody id="ranking-body"></tbody></table></div><p class="hint">Korekta/import/reset tworzą nową epokę: stare rundy zachowują historię, ale nie można ich już przeliczyć. Przed zmianą silnik tworzy snapshot.</p></div><div class="card"><h2>Archiwum rankingów</h2><p class="hint">Zapisane rankingi są przechowywane lokalnie. Lista zawiera metadane, a historyczne wyniki są pobierane po otwarciu podglądu.</p><div class="row archive-toolbar"><input id="archive-search" aria-label="Szukaj archiwum po nazwie" placeholder="Szukaj archiwum po nazwie" maxlength="80"><button id="archive-search-submit" type="button">Szukaj</button><button id="refresh-ranking-archives" type="button">Odśwież archiwa</button><span class="hint">Od najnowszych</span></div><p id="ranking-archive-status" role="status" class="hint">Użyj Odśwież archiwa, aby pobrać zapisane rankingi.</p><button id="archive-restore-check" type="button" hidden>Sprawdź wynik przywracania</button><div class="scroll"><table class="archive-table"><thead><tr><th>Nazwa</th><th>Data zapisu</th><th>Typ</th><th>Widzowie</th><th>Punkty łącznie</th><th>Wersja</th><th></th></tr></thead><tbody id="ranking-archive-body"></tbody></table></div><div class="row archive-pagination"><span id="archive-page-status" class="hint">Brak pobranej listy.</span><div class="row"><button id="archive-page-previous" type="button" disabled>Poprzednia strona</button><button id="archive-page-next" type="button" disabled>Następna strona</button></div></div><div id="archive-preview" hidden><h3 id="archive-preview-title">Podgląd historyczny</h3><p class="archive-history-note">Podgląd historyczny. Otwieranie i zamykanie tej tabeli nie zmienia aktualnego rankingu.</p><p id="archive-preview-meta" class="hint"></p><div class="row"><button id="restore-ranking-archive" class="danger" type="button" disabled>Przywróć ranking</button><button id="close-archive-preview" type="button">Zamknij podgląd</button></div><p id="archive-team-warning" class="hint" hidden></p><div class="scroll"><table class="archive-table"><thead><tr><th>Pozycja</th><th>Nick widza</th><th>Twitch User ID</th><th>Punkty</th><th>Poprawne odpowiedzi</th><th>Udzielone odpowiedzi</th></tr></thead><tbody id="archive-preview-body"></tbody></table></div><div class="row archive-pagination"><span id="archive-preview-page-status" class="hint"></span><div class="row"><button id="archive-preview-previous" type="button" disabled>Poprzednie wyniki</button><button id="archive-preview-next" type="button" disabled>Następne wyniki</button></div></div></div></div></section>
 <section id="teams" class="tab"><div class="card"><h2>Drużyny</h2><div class="row"><label><input id="team-mode" type="checkbox">Team Mode ON/OFF</label><button id="save-team-mode">Zapisz tryb</button></div><div id="team-list"></div><div class="row"><input id="team-name" placeholder="Nazwa drużyny" maxlength="80"><button id="add-team">Dodaj drużynę</button></div><h3>Przypisanie widza</h3><div class="row"><input id="team-user-id" placeholder="Nickname widza (lub User ID)" maxlength="160" list="known-viewers"><datalist id="known-viewers"></datalist><select id="team-select"></select><button id="assign-team">Przypisz</button><button id="unassign-team">Usuń przypisanie</button></div><div id="team-members"></div><p class="hint">Wpisz nickname widza z rankingu - panel sam użyje jego Twitch User ID. Możesz też wkleić ID ręcznie. Drużyny otrzymują punkty za rundy z aktywnym Team Mode. Zmiana przypisania nie przenosi wcześniejszych punktów. Brak komendy samodzielnego dołączania.</p></div></section>
 <section id="history" class="tab"><div class="card"><h2>Historia rund</h2><div class="row"><button data-action="getdata">Odśwież</button><button id="undo-round">Cofnij ostatni przyznany wynik</button></div><div id="history-list"></div></div></section>
-<section id="overlay" class="tab"><div class="card"><h2>Overlay / Wygląd</h2><p>Ustaw tutaj wygląd źródła w OBS. Overlay korzysta z jednego pliku <code>overlay.html</code>.</p><div class="row"><a href="overlay.html?demo=1&v=2.0.0" target="_blank" rel="noopener">Podgląd overlaya</a></div><div id="overlay-settings"></div><button id="save-overlay" class="primary">Zapisz wygląd</button><p class="hint">Źródło Przeglądarka w OBS: 1920×1080, przezroczyste tło. Dźwięki powstają lokalnie i wymagają włączonego audio źródła.</p></div></section>
+<section id="overlay" class="tab"><div class="card"><h2>Overlay / Wygląd</h2><p>Ustaw tutaj wygląd źródła w OBS. Overlay korzysta z jednego pliku <code>overlay.html</code>.</p><div class="row"><a href="overlay.html?demo=1&v=2.0.2" target="_blank" rel="noopener">Podgląd overlaya</a></div><div id="overlay-settings"></div><button id="save-overlay" class="primary">Zapisz wygląd</button><p class="hint">Źródło Przeglądarka w OBS: 1920×1080, przezroczyste tło. Dźwięki powstają lokalnie i wymagają włączonego audio źródła.</p></div></section>
 <section id="settings" class="tab"><div class="card"><h2>Ustawienia / Bindy</h2><div class="row"><label><input id="cooldowns" type="checkbox">Cooldowny ON/OFF</label><label>User (s)<input id="user-cooldown" type="number" min="0" max="3600"></label><label>Global (s)<input id="global-cooldown" type="number" min="0" max="3600"></label></div><p class="hint">!punkty / !ranking. Moderatorzy i broadcaster są zwolnieni z cooldownów.</p><label><input id="shortcuts" type="checkbox">Keyboard Shortcuts ON/OFF</label><div id="key-settings"></div><div class="row"><button id="default-keys">Przywróć domyślne bindy</button><button id="save-settings" class="primary">Zapisz ustawienia</button></div><p class="hint">Format: Ctrl+Alt+KeyS. Kliknij pole i naciśnij skrót; Backspace/Delete czyści. Skróty nie działają w polach tekstowych ani dialogach.</p></div></section>
 <section id="backup" class="tab"><div class="card"><h2>Backup / Snapshoty</h2><div class="row"><button data-action="exportbackup">Eksportuj pełny backup</button><button id="import-backup">Przywróć pełny backup</button></div><p class="hint">Import szablonów JSON jest w sekcji Szablony. Import JSON/CSV ma podgląd, ponowną walidację w silniku i jawne potwierdzenie. Pełny restore nie wznawia starej aktywnej rundy.</p><h3>Ostatnie snapshoty (maks. 5 / 32 MiB)</h3><div id="snapshot-list"></div></div></section>
 <section id="diagnostics" class="tab"><div class="card"><h2>Diagnostyka instalacji</h2><button id="test-install" class="primary">Test instalacji</button><div id="diagnostic-results"></div><p class="hint">Test nie sprawdzi automatycznie połączenia Twitch ani tego, czy OBS wyświetla źródło. Te elementy wymagają testu na Twoim komputerze.</p></div></section>
@@ -37,9 +38,14 @@
       <a href="#help-first-round">Pierwsza runda</a>
       <a href="#help-round-controls">Sterowanie rundą</a>
       <a href="#help-overlay">Overlay i OBS</a>
-      <a href="#help-ranking">Punkty i CSV</a>
+      <a href="#help-ranking">Punkty, CSV i archiwa</a>
       <a href="#help-troubleshooting">Gdy coś nie działa</a>
     </div>
+    <details>
+      <summary>PROSTY, ADVANCED i dodatkowe opcje pytania</summary>
+      <p><strong>PROSTY</strong> pokazuje podstawowe karty: Live / Runda, Pytanie / Szkic, Szablony, Ranking / CSV, Historię i Pomoc. <strong>ADVANCED</strong> udostępnia także Zestawy, Drużyny, Overlay, Ustawienia, Backup i Diagnostykę. Tryb przełączysz przyciskami u góry panelu. Wybór jest zapamiętywany w tej przeglądarce.</p>
+      <p>W PROSTY kliknij <strong>Dodatkowe opcje pytania</strong>, aby odsłonić między innymi QUIZ/POLL, Auto Reveal, politykę głosów, mieszanie odpowiedzi i dodatkową punktację. Schowanie tych pól nie wyłącza zapisanych ustawień. Przełączanie trybu lub widoczności opcji nie resetuje szkicu ani trwającej rundy.</p>
+    </details>
   </div>
 
   <div class="card" id="help-first-round">
@@ -48,7 +54,7 @@
       <li><strong>Połącz panel.</strong> Wpisz hasło WebSocket i kliknij <strong>Połącz bezpiecznie</strong>. Jeśli dopiero uruchamiasz quiz, instrukcja połączenia jest niżej.</li>
       <li><strong>Otwórz Pytanie / Szkic.</strong> Wpisz treść i od 2 do 12 odpowiedzi. Dla quizu wybierz <strong>QUIZ</strong>. Jeśli chcesz tylko poznać opinię widzów, wybierz <strong>POLL</strong>.</li>
       <li><strong>Ustaw zakończenie.</strong> Timer <strong>0</strong> oznacza ręczne zamknięcie. Wpisz liczbę sekund, jeśli głosowanie ma zamknąć się samo. Na pierwszą próbę wystarczy 60 sekund.</li>
-      <li><strong>Wybierz punktację.</strong> Zaznacz <strong>Correct</strong> przy poprawnej odpowiedzi i ustaw <strong>Pełne pkt</strong>. Poprawnych odpowiedzi może być kilka. Możesz też wskazać je dopiero przed ujawnieniem.</li>
+      <li><strong>Wybierz punktację.</strong> Zaznacz <strong>Poprawna</strong> przy poprawnej odpowiedzi i ustaw <strong>Pełne pkt</strong>. Poprawnych odpowiedzi może być kilka. Możesz też wskazać je dopiero przed ujawnieniem.</li>
       <li><strong>Kliknij Rozpocznij głosowanie.</strong> Widzowie wybierają odpowiedź na czacie przez <code>!1</code>, <code>!2</code> i kolejne numery z overlayu.</li>
       <li><strong>Zakończ rundę.</strong> W karcie <strong>Live / Runda</strong> kliknij <strong>Zamknij głosowanie</strong>, potem <strong>Reveal / punktacja</strong>. Sprawdź odpowiedzi i punkty w otwartym oknie, a następnie zatwierdź.</li>
       <li><strong>Sprawdź Ranking / CSV.</strong> Punkty trafiają do rankingu po ujawnieniu quizu. Teraz możesz rozpocząć kolejne pytanie.</li>
@@ -95,7 +101,7 @@
 
   <div class="card">
     <h2>Jak naliczają się punkty</h2>
-    <p><strong>Correct</strong> oznacza poprawną odpowiedź. <strong>Partial</strong> oznacza odpowiedź wartą częściowe punkty. Jeśli zaznaczysz oba pola, Correct ma pierwszeństwo.</p>
+    <p><strong>Poprawna</strong> (Correct) oznacza poprawną odpowiedź. <strong>Partial</strong> oznacza odpowiedź wartą częściowe punkty. Jeśli zaznaczysz oba pola, Correct ma pierwszeństwo.</p>
     <details open>
       <summary>Preset i punkty przy odpowiedziach</summary>
       <ul>
@@ -116,7 +122,8 @@
     <details>
       <summary>Pomyłka po rozliczeniu rundy</summary>
       <p>W <strong>Historii</strong> użyj <strong>Cofnij ostatni przyznany wynik</strong>, aby usunąć wpływ ostatniej dostępnej rundy z punktów i statystyk. Jeśli poprawna odpowiedź lub liczba punktów była błędna, rozwiń rundę i wybierz <strong>Popraw wynik / przelicz</strong>. Późniejsze wyniki zostaną przeliczone z uwzględnieniem tej zmiany.</p>
-      <p>Korekta punktów, import CSV i reset zamykają możliwość przeliczania wcześniejszych rund. Ich historia zostaje do podglądu. Do przywrócenia stanu sprzed takiej zmiany użyj odpowiedniego snapshotu w karcie Backup.</p>
+      <p>Korekta punktów, import CSV, reset i przywrócenie archiwum rankingu zamykają możliwość przeliczania wcześniejszych rund. Ich historia zostaje do podglądu. Do przywrócenia stanu sprzed takiej zmiany użyj odpowiedniego snapshotu w karcie Backup.</p>
+      <p class="hint">Historia jest krocząca: obejmuje maksymalnie 100 rund i może zostać skrócona przy dużym rozmiarze stanu. Jeśli chcesz zachować jej obecną zawartość poza silnikiem, wyeksportuj pełny backup.</p>
     </details>
   </div>
 
@@ -215,11 +222,45 @@
     <details>
       <summary>Reset rankingu</summary>
       <p>Kliknij <strong>Reset rankingu</strong>, wpisz <strong>RESET</strong> i potwierdź. Reset czyści ranking, statystyki widzów oraz wyniki drużyn. Pytania, zestawy i historia pozostają.</p>
+      <p>Przed wyzerowaniem niepusty ranking zostaje zapisany w automatycznym archiwum. Błąd zapisu lub sprawdzenia archiwum zatrzymuje reset. Pusty ranking nie tworzy pustego automatycznego archiwum. Niezależnie powstaje snapshot stanu sprzed zmiany.</p>
       <p>Zakończ albo anuluj otwartą lub jeszcze nierozliczoną rundę przed resetem, importem i cofaniem CSV. Korekta jest dostępna również podczas rundy, ale najlepiej zrobić ją po rozliczeniu, gdy znasz już końcowy wynik. Panel czeka na potwierdzenie zapisu. Po zakończeniu zmiany sprawdź aktualny ranking.</p>
+    </details>
+    <details>
+      <summary>Zapisz ranking bez resetu</summary>
+      <p>W <strong>Ranking / CSV</strong> kliknij <strong>Zapisz ranking</strong>. Wpisz nazwę archiwum lub pozostaw ją pustą, aby użyć daty i godziny UTC. Zatwierdź zapis i poczekaj na potwierdzenie silnika.</p>
+      <p>Zapis obejmuje wszystkich zapisanych widzów, ich punkty i statystyki oraz wyniki drużyn. Nie zeruje rankingu i nie zmienia epoki. Możesz wykonać go podczas rundy, ale zachowuje wyłącznie już naliczone wyniki. Sam zapis nie rozlicza bieżących głosów.</p>
+      <p>Każdy nowy zapis tworzy osobne archiwum. Użyj czytelnej nazwy, na przykład nazwy quizu lub streama, i przed kolejnym zapisem sprawdź, czy poprzedni został potwierdzony.</p>
+    </details>
+    <details>
+      <summary>Przeglądanie i przywracanie archiwów rankingu</summary>
+      <ol>
+        <li>W sekcji <strong>Archiwum rankingów</strong> kliknij <strong>Odśwież archiwa</strong>. Lista pokazuje najnowsze wpisy. Możesz wyszukać nazwę i przechodzić między stronami.</li>
+        <li>Kliknij <strong>Podgląd</strong>, aby zobaczyć historyczne punkty i statystyki widzów. Tabela wyników ma osobne strony. Otwarcie i zamknięcie podglądu nie zmienia aktualnego rankingu ani nie rozlicza rundy.</li>
+        <li>Jeśli chcesz zastąpić obecne wyniki, wybierz <strong>Przywróć ranking</strong>, przeczytaj podsumowanie, wpisz dokładnie <strong>PRZYWROC</strong> i zatwierdź.</li>
+        <li>Poczekaj na potwierdzenie oraz odświeżenie rankingu. Przywrócenie przypisuje zapisane wyniki i statystyki zamiast dodawać je do obecnych.</li>
+      </ol>
+      <p>Przed przywróceniem silnik zapisuje i sprawdza kopię bezpieczeństwa obecnego rankingu oraz snapshot. Niepowodzenie tych kroków blokuje zmianę. Powstaje nowa epoka punktacji. Historia rund zostaje, ale starszych rund nie można już przeliczać.</p>
+      <p>Archiwum rankingu nie zastępuje pytań, zestawów ani ustawień quizu. Zachowuje też obecne definicje drużyn i przypisania widzów. Przywracanie jest dostępne, gdy nie ma nierozliczonej rundy, a drużyny, przypisania i Team Mode są zgodne z archiwum. Jeżeli przycisk jest zablokowany, sprawdź komunikat przy podglądzie.</p>
+    </details>
+    <details>
+      <summary>Gdzie są archiwa i jak je zachować</summary>
+      <p><strong>Otwórz folder archiwów</strong> otwiera stały katalog Windows: <code>%LOCALAPPDATA%\<wbr>LukiQuizEngine\<wbr>RankingArchives</code>. Jest on związany z kontem Windows uruchamiającym Streamer.bot i znajduje się poza folderem panelu.</p>
+      <p>W tym miejscu są archiwa automatyczne, ręczne i kopie bezpieczeństwa sprzed przywracania. Kopia samego folderu projektu ani eksport pełnego backupu quizu nie zabierają tych osobnych plików. Jeśli chcesz je przenieść lub zabezpieczyć, wykonaj również kopię katalogu archiwów z zachowaniem struktury i plików pomocniczych.</p>
+      <p>Silnik nie usuwa automatycznie starych archiwów rankingu, więc kontroluj wolne miejsce na dysku. Ograniczona lista w panelu nie oznacza, że pozostałe pliki zostały usunięte. Nie edytuj ręcznie archiwów ani potwierdzeń operacji. Nowe archiwa mają kontrolę integralności, ale starszy poprawny plik może nie mieć hasha. Hash wykrywa uszkodzenia, nie potwierdza autora pliku.</p>
+    </details>
+    <details>
+      <summary>CSV, archiwum rankingu, snapshot czy pełny backup?</summary>
+      <ul>
+        <li><strong>CSV</strong> - przenoszenie i edycja rankingu widzów. Import korzysta z replace albo merge. Nie jest kopią całego quizu ani rankingu drużyn.</li>
+        <li><strong>Archiwum rankingu</strong> - historyczne punkty i statystyki widzów oraz wyniki drużyn. Ma podgląd i przywracanie w Ranking / CSV, bez zastępowania pytań i ustawień.</li>
+        <li><strong>Snapshot</strong> - cały stan quizu zapisany wewnątrz Streamer.bot. Dostępnych jest maksymalnie pięć kopii, łącznie do 32 MiB. To historia krocząca, nie stałe archiwum wszystkich zmian.</li>
+        <li><strong>Pełny backup JSON</strong> - cały stan quizu wyeksportowany do własnego pliku. Nadaje się do zachowania lub przeniesienia pytań, zestawów, rankingu i ustawień. Nie obejmuje konfiguracji serwerów, hasła WebSocket ani osobnych plików archiwów.</li>
+      </ul>
     </details>
     <details>
       <summary>Pełny backup i snapshoty</summary>
       <p>W karcie <strong>Backup</strong> wybierz <strong>Eksportuj pełny backup</strong>. To kopia punktów, pytań, zestawów, historii, drużyn, szkicu i ustawień. Warto zapisać ją przed większymi zmianami i po zakończeniu streama. CSV jest kopią rankingu, nie całego quizu.</p>
+      <p>Przed eksportem pełnego backupu zakończ lub anuluj nierozliczoną rundę. Zapisany plik zachowuje stan z chwili eksportu, nie aktualizuje się po kolejnych zmianach w quizie.</p>
       <p><strong>Przywróć pełny backup</strong> zastępuje cały stan quizu po sprawdzeniu podglądu i potwierdzeniu. Nie wznawia starej niedokończonej rundy. Backup nie zawiera hasła WebSocket ani konfiguracji OBS.</p>
       <p>Silnik robi też automatyczne <strong>snapshoty</strong> przed importem, resetem i innymi większymi zmianami. W Backup zobaczysz do pięciu ostatnich kopii. Wybrany snapshot przywraca cały zapisany stan, więc sprawdź jego datę i opis.</p>
     </details>
@@ -256,7 +297,23 @@
     <details>
       <summary>Panel nie łączy się albo nie reaguje</summary>
       <p>Uruchom lokalne serwery HTTP i WebSocket w Streamer.bot. Sprawdź adres, port i hasło. <strong>Authentication</strong> oraz <strong>Enforce</strong> muszą być włączone. Po zmianie ich ustawień uruchom WebSocket Server ponownie.</p>
-      <p>Jeśli połączenie działa, ale silnik nie odpowiada, sprawdź, czy Action <strong>QUIZ - Silnik</strong> jest włączona i czy cały aktualny kod C# został zapisany przez <strong>Save and Compile</strong>. W Diagnostyce sprawdź pozycję <strong>Wersja poprawek</strong>. Po podmianie plików panelu użyj Ctrl + F5.</p>
+      <p>Jeśli połączenie działa, ale silnik nie odpowiada, sprawdź, czy Action <strong>QUIZ - Silnik</strong> jest włączona i czy cały aktualny kod C# został zapisany przez <strong>Save and Compile</strong>. W Diagnostyce sprawdź pozycje <strong>Identyfikator buildu</strong> i <strong>Identyfikator poprawki</strong>. Dla tej wersji są to <strong>PHoeniX</strong> i <strong>QUPA</strong>. Po podmianie plików panelu użyj Ctrl + F5.</p>
+    </details>
+    <details>
+      <summary>INFO przy Enforce i zakres diagnostyki</summary>
+      <p>Uwierzytelnienie panelu i wymuszanie uwierzytelnienia na wszystkich klientach to dwa różne sprawdzenia. W Streamer.bot pozostaw włączone zarówno <strong>Authentication</strong>, jak i <strong>Enforce</strong>.</p>
+      <ul>
+        <li><strong>OK przy Enforce</strong> - sonda dostała rozpoznane odrzucenie żądania bez hasła, a uwierzytelnione połączenie przeszło kontrole.</li>
+        <li><strong>BŁĄD przy Enforce</strong> - sonda przyjęła żądanie bez hasła lub nie otrzymała wymaganego wyzwania Authentication. Panel blokuje takie połączenie.</li>
+        <li><strong>INFO przy Enforce</strong> - wynik automatycznej sondy jest niejednoznaczny. Samo zamknięcie połączenia, błąd lub timeout nie dowodzą ani poprawnego Enforce, ani błędnej konfiguracji. Sprawdź ustawienie Enforce w WebSocket Server. Poprawnie uwierzytelniony panel może nadal działać z wynikiem INFO.</li>
+      </ul>
+      <p>Identyfikatory PHoeniX i QUPA służą do sprawdzania zgodności, nie są hasłami. Lokalny adres strony i połączenia nie potwierdza, że serwery nasłuchują wyłącznie na localhost. Test instalacji nie zastępuje sprawdzenia ustawień serwerów i rzeczywistych integracji.</p>
+    </details>
+    <details>
+      <summary>Runda nie daje się rozliczyć lub zgłasza przekroczenie limitu</summary>
+      <p>Wynik widza może wynosić maksymalnie <strong>100 000 000 punktów</strong>. Jeżeli nowa runda przekroczyłaby ten limit albo zapis narusza inny limit danych, silnik odmawia finalizacji. Nie obcina punktów po cichu. Błąd nie jest potwierdzeniem udanej rundy.</p>
+      <p>Po błędzie automatycznego zakończenia ponowienia dla tego samego stanu zostają wstrzymane. Odczyt danych i diagnostyka pozostają dostępne. Sprawdź komunikat w <strong>Diagnostyka → Test działania silnika</strong>, aktualny ranking i stan rundy. Samo odświeżanie panelu nie usuwa przyczyny limitu.</p>
+      <p>Możesz bezpiecznie anulować nierozliczoną rundę przyciskiem <strong>Anuluj / wyczyść</strong>. Przed przywróceniem odpowiedniego snapshotu lub pełnego backupu anuluj taką rundę. Wybierz kopię świadomie, ponieważ zastąpi ona szerszy stan quizu. Nie wykonuj resetu całego rankingu jako automatycznej reakcji na błąd.</p>
     </details>
     <details>
       <summary>Widzowie piszą komendy, a głosów nie ma</summary>
@@ -269,8 +326,14 @@
     </details>
     <details>
       <summary>Brak potwierdzenia operacji</summary>
-      <p>Komunikat o nieudanym odczycie oznacza, że panel nie dostał aktualnych danych. Sprawdź połączenie i odśwież. Taki odczyt sam nie zmienia punktów.</p>
+      <p>Komunikat o nieudanym odczycie oznacza, że panel nie dostał aktualnych danych. Sprawdź połączenie i odśwież. Odświeżenie, diagnostyka, eksport oraz podgląd danych mogą uruchomić migrację lub zakończenie rundy po upływie timera, w tym AutoReveal i zapis punktów. Lista i podgląd archiwów rankingu nie rozliczają rundy.</p>
       <p>Przy zmianie punktów, imporcie lub resecie komunikat o braku potwierdzenia nie rozstrzyga, czy zapis się udał. Po ponownym połączeniu najpierw kliknij <strong>Odśwież</strong> i sprawdź wynik. Jeśli nadal się nie zgadza, sprawdź Diagnostykę i log Action w Streamer.bot przed kolejną próbą.</p>
+      <p>Po niepotwierdzonym ręcznym zapisie użyj <strong>Odśwież archiwa</strong> i sprawdź, czy archiwum powstało. Jeśli silnik nie może odtworzyć przerwanego zapisu i zaleca nowe żądanie, po sprawdzeniu listy wykonaj nowy, świadomy zapis. Nie zmieniaj ręcznie plików potwierdzeń. Przy ponawianiu niepotwierdzonego resetu użyj tej samej karty panelu, która zachowuje poprzednie żądanie.</p>
+    </details>
+    <details>
+      <summary>Utrata połączenia podczas przywracania rankingu</summary>
+      <p>Nie uruchamiaj od razu kolejnego przywracania. Wróć do tej samej karty, połącz panel i użyj <strong>Sprawdź wynik przywracania</strong>. To sprawdzenie wcześniejszej operacji, a nie ponowne przywrócenie. Do wyjaśnienia wyniku panel może blokować następne zmiany rankingu.</p>
+      <p>Po potwierdzeniu odśwież ranking i sprawdź wyniki. Gdy rezultat jest niepewny albo żądanie nie zostało znalezione, przeczytaj komunikat, sprawdź ranking i archiwa oraz ponownie otwórz podgląd przed ewentualną nową, świadomą operacją. Brak odpowiedzi lub brak znalezionego żądania sam w sobie nie dowodzi, że przywrócenie nie nastąpiło.</p>
     </details>
     <details>
       <summary>Podłączenie od zera</summary>
@@ -288,13 +351,15 @@
 </section>
 
 </main></div><dialog id="editor-dialog"><h2 id="dialog-title"></h2><div id="dialog-editor"></div><div class="row"><button id="dialog-save" class="primary">Zapisz</button><button id="dialog-close">Anuluj</button></div></dialog>
+<dialog id="archive-save-dialog" aria-labelledby="archive-save-title"><h2 id="archive-save-title">Zapisz ranking</h2><p>Zapis zachowuje aktualne punkty, statystyki widzów i wyniki drużyn. Nie resetuje rankingu ani epoki. Podczas rundy zapisuje spójny stan już naliczonych wyników.</p><label class="field" for="archive-save-name">Nazwa archiwum (opcjonalnie)<input id="archive-save-name" type="text" maxlength="80" autocomplete="off" placeholder="Np. Ranking przed wydarzeniem"></label><p class="hint">Pusta nazwa zostanie zastąpiona datą i godziną zapisu.</p><p id="archive-save-error" class="status-fail" role="alert" hidden></p><div class="row"><button id="confirm-save-archive" class="primary" type="button">Zapisz ranking</button><button id="cancel-save-archive" type="button">Anuluj</button></div></dialog>
+<dialog id="archive-restore-dialog" aria-labelledby="archive-restore-title"><h2 id="archive-restore-title">Przywróć ranking</h2><div id="restore-archive-summary"></div><p>Obecne wyniki i statystyki zostaną zastąpione wynikami z archiwum. Silnik najpierw utworzy i sprawdzi kopię bezpieczeństwa oraz snapshot. Błąd kopii blokuje przywracanie.</p><p class="hint">Powstanie nowa epoka punktacji. Historia rund pozostanie, a starsze rundy nie naliczą ponownie punktów. Definicje drużyn i przypisania widzów pozostają. Przywracanie jest zablokowane podczas niezakończonej rundy.</p><label class="field" for="archive-restore-confirmation">Wpisz PRZYWROC<input id="archive-restore-confirmation" type="text" maxlength="20" autocomplete="off" spellcheck="false"></label><p id="archive-restore-error" class="status-fail" role="alert" hidden></p><div class="row"><button id="confirm-restore-archive" class="danger" type="button">Przywróć ranking</button><button id="cancel-restore-archive" type="button">Anuluj</button></div></dialog>
 <dialog id="reset-dialog" aria-labelledby="reset-dialog-title"><h2 id="reset-dialog-title">Reset punktacji</h2><p>Reset usunie ranking, statystyki widzów i wyniki drużyn. Przed zapisem silnik utworzy snapshot do przywrócenia.</p><p class="hint">Zakończ lub anuluj aktywną rundę przed resetem. Zapisane pytania, zestawy i historia pozostają.</p><label for="reset-confirmation">Wpisz RESET<input id="reset-confirmation" type="text" maxlength="20" autocomplete="off" spellcheck="false"></label><p id="reset-error" class="status-fail" role="alert" hidden></p><div class="row"><button id="confirm-reset" class="danger">Wyzeruj punktację</button><button id="cancel-reset">Anuluj</button></div></dialog>
 <dialog id="score-dialog" aria-labelledby="score-dialog-title"><h2 id="score-dialog-title">Korekta punktów</h2><p id="score-viewer"></p><label for="score-points">Nowa liczba punktów<input id="score-points" type="number" inputmode="numeric" min="0" max="100000000" step="1" required></label><p class="hint">Wpisz pełny nowy wynik. Przed zapisem silnik utworzy snapshot rankingu.</p><p id="score-error" class="status-fail" role="alert" hidden></p><div class="row"><button id="save-score" class="primary">Zapisz punkty</button><button id="cancel-score">Anuluj</button></div></dialog>
 <dialog id="import-dialog"><h2>Podgląd importu</h2><pre id="import-preview"></pre><label>Tryb<select id="import-mode"><option value="replace">replace</option><option value="merge">merge (zastępuje pasujące ID)</option></select></label><p id="import-warning" class="hint"></p><p class="hint">Kliknięcie „Potwierdź import” zatwierdza powyższe dane i wybrany tryb.</p><div class="row"><button id="confirm-import" class="primary" disabled>Potwierdź import</button><button id="cancel-import">Anuluj</button></div></dialog><input id="file-picker" type="file" hidden><div id="toast" role="status"></div>
 <dialog id="undo-import-dialog" aria-labelledby="undo-import-title"><h2 id="undo-import-title">Cofnij import CSV</h2><p>Przywróć ranking sprzed ostatniego importu CSV. Przed zmianą silnik utworzy snapshot obecnego stanu.</p><label for="undo-import-confirmation">Wpisz COFNIJ<input id="undo-import-confirmation" type="text" maxlength="20" autocomplete="off" spellcheck="false"></label><p id="undo-import-error" class="status-fail" role="alert" hidden></p><div class="row"><button id="confirm-undo-import" class="primary">Przywróć ranking</button><button id="cancel-undo-import">Anuluj</button></div></dialog>
 <dialog id="cancel-round-dialog" aria-labelledby="cancel-round-title"><h2 id="cancel-round-title">Anuluj / wyczyść rundę</h2><p>Zamknij głosowanie i wyczyść pytanie z overlayu. Przyznane wcześniej punkty pozostają w rankingu.</p><p id="cancel-round-error" class="status-fail" role="alert" hidden></p><div class="row"><button id="confirm-cancel-round" class="danger">Anuluj / wyczyść</button><button id="close-cancel-round">Wróć</button></div></dialog>
 <script>
-const APP_VERSION='2.0.0', UI_BUILD='FC1', CLIENT_PATCH='STYLE4', ACTION_NAME='QUIZ - Silnik', MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
+const APP_VERSION='2.0.2', UI_BUILD='PHoeniX', CLIENT_PATCH='QUPA', ACTION_NAME='QUIZ - Silnik', MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
 const LOOPBACK_HOSTS=new Set(['127.0.0.1','localhost']);
       function isTrustedPageOrigin() {
         return location.protocol === 'http:' &&
@@ -430,26 +495,24 @@ async function verifyEnforce(rawUrl, authenticatedSocket, timeoutMs = 3500) {
       }
       if (sent && p.id === id) {
         if (p.status === 'ok') finish(false);
-        else if (p.status === 'error' && /auth/i.test(String(p.error || p.message || ''))) finish(true);
+        else if (p.status === 'error' && /^(?:authentication (?:is )?required|not authenticated)[.!]?$/i.test(String(p.error || p.message || '').trim())) finish(true);
         else finish(null, 'nierozpoznana odpowiedź sondy');
       }
     });
     socket.addEventListener('close', event => {
-      const rejected = sent && event.wasClean && [1000,1005,1008,4009].includes(event.code);
-      finish(rejected ? true : null, 'sonda close=' + event.code + ', clean=' + event.wasClean);
+      finish(null, 'sonda close=' + event.code + ', clean=' + event.wasClean);
     });
     socket.addEventListener('error', () => finish(null, 'błąd transportu sondy'));
   });
-  if (result.enforced === null) throw Error('Nie można potwierdzić Enforce: ' + result.detail + '. Hasło zostało zaakceptowane.');
-  if (!result.enforced) return false;
+  if (result.enforced === false) return false;
   await authenticatedInfo(authenticatedSocket, timeoutMs);
-  return true;
+  return result.enforced;
 }
 
 class QuizConnection {
- constructor(onData,onStatus,bootstrap=['sync','getscores','getdata']){this.onData=onData;this.onStatus=onStatus;this.bootstrap=bootstrap;this.socket=null;this.password='';this.url='';this.authenticated=false;this.generation=0;this.counter=0;this.reconnect=true;this.authId='';this.subId='';this.enforce=false;this.timer=null;this.engineReady=false;this.pending=new Map();this.readRetryTimers=new Set();}
+ constructor(onData,onStatus,bootstrap=['sync','getscores','getdata']){this.onData=onData;this.onStatus=onStatus;this.bootstrap=bootstrap;this.socket=null;this.password='';this.url='';this.authenticated=false;this.generation=0;this.counter=0;this.reconnect=true;this.authId='';this.subId='';this.enforce=null;this.timer=null;this.engineReady=false;this.rankingArchiveReady=false;this.pending=new Map();this.readRetryTimers=new Set();this.retryReset=null;this.retryRestore=null;try{const id=sessionStorage.getItem('localQuiz.archiveRestorePending.v1'),archiveId=sessionStorage.getItem('localQuiz.archiveRestoreArchiveId.v1');if(id&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id))this.retryRestore={id,...(archiveId&&/^[a-zA-Z0-9_-]{1,180}$/.test(archiveId)?{archiveId}:{})};}catch{}}
  async connect(url,password){
-  const generation=++this.generation;this.engineReady=false;this.failPending('Połączenie zmienione - wynik operacji niepotwierdzony.');clearTimeout(this.timer);if(this.socket)this.socket.close();this.socket=null;this.authenticated=false;this.subId='';this.enforce=false;
+  const generation=++this.generation;this.engineReady=false;this.rankingArchiveReady=false;this.failPending('Połączenie zmienione - wynik operacji niepotwierdzony.');clearTimeout(this.timer);if(this.socket)this.socket.close();this.socket=null;this.authenticated=false;this.subId='';this.enforce=null;
   try{if(!isTrustedPageOrigin())throw Error('Otwórz stronę przez lokalny HTTP Server (127.0.0.1).');this.url=normalizeWebSocketUrl(url);if(typeof password!=='string'||password.length<12||password.length>256)throw Error('Hasło: 12-256 znaków.');this.password=password;this.reconnect=true;
    const socket=new WebSocket(this.url);this.socket=socket;this.onStatus('Łączenie i uwierzytelnianie…',false);
    socket.addEventListener('message',async event=>{
@@ -466,13 +529,13 @@ class QuizConnection {
       if(p.status!=='ok')throw Error('Błędne hasło WebSocket.');
       const enforce=await verifyEnforce(this.url,socket);
       if(this.socket!==socket||generation!==this.generation)return;
-      if(enforce!==true)throw Error(enforce===false?'Enforce jest prawdopodobnie wyłączone.':'Nie można potwierdzić Enforce sad');
-      this.enforce=true;this.subId='quiz-sub-'+generation+'-'+(++this.counter);this.onStatus('Zabezpiczenia aktywne, trwa łączenie hehe',false);
+      this.enforce=enforce;if(enforce===false)throw Error('Sonda przyjęła żądanie bez hasła. Sprawdź Authentication i Enforce.');
+      this.subId='quiz-sub-'+generation+'-'+(++this.counter);this.onStatus(enforce===true?'Zabezpiczenia aktywne, trwa łączenie hehe':'Uwierzytelnianie poprawne. Automatyczna weryfikacja Enforce jest niejednoznaczna - trwa łączenie.',false);
       socket.send(JSON.stringify({request:'Subscribe',id:this.subId,events:{General:['Custom']}}));return;
      }
      if(p.id===this.subId){
       if(p.status!=='ok')throw Error('Nie udało się zasubskrybować General.Custom.');
-      this.authenticated=true;this.onStatus('Authentication + Enforce dziala - trwa sprawdzanie zgodności silnika…',false);this.action('diagnostics');return;
+      this.authenticated=true;this.onStatus(this.enforce===true?'Authentication + Enforce dziala - trwa sprawdzanie zgodności silnika…':'Uwierzytelnianie poprawne. Automatyczna weryfikacja Enforce jest niejednoznaczna - sprawdzam silnik.',false);this.action('diagnostics');return;
      }
      if(!this.authenticated)return;
      if(p.id&&this.pending.has(p.id)&&p.status==='error'){const job=this.pending.get(p.id);clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.id);this.onData({type:job.read?'quiz-read-error':'quiz-error',requestId:p.id,operation:job.op,message:'Streamer.bot odrzucił żądanie. Sprawdź nazwę i stan Action QUIZ - Silnik.'});return;}
@@ -484,12 +547,13 @@ class QuizConnection {
      };walk(p);
     }catch(error){this.reconnect=false;this.authenticated=false;this.onStatus(error.message,false);socket.close();}
    });
-   socket.addEventListener('close',()=>{if(this.socket!==socket)return;this.socket=null;this.authenticated=false;this.engineReady=false;this.failPending('Rozłączono - wynik operacji niepotwierdzony. Odśwież ranking po połączeniu.');if(this.reconnect){this.onStatus('Rozłączono - ponowne połączenie…',false);this.timer=setTimeout(()=>this.connect(this.url,this.password),2500);}});
+   socket.addEventListener('close',()=>{if(this.socket!==socket)return;this.socket=null;this.authenticated=false;this.engineReady=false;this.rankingArchiveReady=false;this.failPending('Rozłączono - wynik operacji niepotwierdzony. Odśwież ranking po połączeniu.');if(this.reconnect){this.onStatus('Rozłączono - ponowne połączenie…',false);this.timer=setTimeout(()=>this.connect(this.url,this.password),2500);}});
    socket.addEventListener('error',()=>{if(this.socket===socket)this.onStatus('Brak połączenia WebSocket.',false);});
   }catch(error){this.reconnect=false;this.onStatus(error.message,false);}
  }
- failPending(message){for(const[id,job]of this.pending){clearTimeout(job.timer);clearTimeout(job.lateTimer);if(!job.read)this.onData({type:'quiz-error',requestId:id,message});}this.pending.clear();for(const timer of this.readRetryTimers)clearTimeout(timer);this.readRetryTimers.clear();}
- readPayloadMatches(op,p){const types={sync:'quiz-state',tick:'quiz-state',getscores:'quiz-scores',getdata:'quiz-data',diagnostics:'quiz-diagnostics',exportbackup:'quiz-download',exportbank:'quiz-download',previewbackup:'quiz-preview',previewbank:'quiz-preview'};if(p.type!==types[op])return false;return !['exportbackup','exportbank','previewbackup','previewbank'].includes(op)||p.kind===(op.endsWith('backup')?'backup':'bank');}
+ failPending(message){for(const[id,job]of this.pending){clearTimeout(job.timer);clearTimeout(job.lateTimer);this.onData({type:job.read?'quiz-read-error':'quiz-error',operation:job.op,requestId:id,message:message+(job.op==='resetscores'?' Ponów reset w tym panelu, aby użyć tego samego żądania.':'')});}this.pending.clear();for(const timer of this.readRetryTimers)clearTimeout(timer);this.readRetryTimers.clear();}
+ readPayloadMatches(op,p){const types={sync:'quiz-state',tick:'quiz-state',getscores:'quiz-scores',getdata:'quiz-data',diagnostics:'quiz-diagnostics',exportbackup:'quiz-download',exportbank:'quiz-download',previewbackup:'quiz-preview',previewbank:'quiz-preview',listarchives:'quiz-archives',previewarchive:'quiz-archive-preview'};if(p.type!==types[op])return false;return !['exportbackup','exportbank','previewbackup','previewbank'].includes(op)||p.kind===(op.endsWith('backup')?'backup':'bank');}
+ clearRestoreRequest(){const id=this.retryRestore?.id,job=this.pending.get(id);if(job?.op==='restorearchive'){clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(id);}this.retryRestore=null;try{sessionStorage.removeItem('localQuiz.archiveRestorePending.v1');sessionStorage.removeItem('localQuiz.archiveRestoreArchiveId.v1');}catch{}}
  handle(p){
   if(p.type==='quiz-receipt'){
    const job=this.pending.get(p.requestId);
@@ -499,58 +563,71 @@ class QuizConnection {
   }
   if(p.type==='quiz-diagnostics'){
    if(!this.pending.has(p.requestId)){if(!this.engineReady&&p.build!==UI_BUILD)this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień C# i odśwież pliki.`,false);return;}
-   if(p.build!==UI_BUILD||p.protocol!==1){this.engineReady=false;this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień kod C# i odśwież pliki.`,false);this.onData(p);return;}
-   if(!this.engineReady){this.engineReady=true;this.onStatus('Połączono z LukiQuizEngine v2.0.0 BETA',true);for(const op of this.bootstrap)this.action(op);}
+   if(p.build!==UI_BUILD||p.protocol!==1){this.engineReady=false;this.rankingArchiveReady=false;this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień kod C# i odśwież pliki.`,false);this.onData(p);return;}
+   this.rankingArchiveReady=p.rankingArchiveSchema===1;
+   if(!this.engineReady){this.engineReady=true;this.onStatus(this.enforce===true?'Połączono z LukiQuizEngine v2.0.2 BETA':'Połączono z LukiQuizEngine v2.0.2 BETA. Uwierzytelnianie poprawne.',true);for(const op of this.bootstrap)this.action(op);}
   }
   const payloadJob=this.pending.get(p.requestId);
   if(payloadJob?.read&&p.build===UI_BUILD&&p.operation===payloadJob.op&&Number.isSafeInteger(p.revision)&&this.readPayloadMatches(payloadJob.op,p)){
-   this.onData(p);clearTimeout(payloadJob.timer);clearTimeout(payloadJob.lateTimer);this.pending.delete(p.requestId);this.onData({type:'quiz-read-ok',operation:payloadJob.op});return;
+   this.onData(p);clearTimeout(payloadJob.timer);clearTimeout(payloadJob.lateTimer);this.pending.delete(p.requestId);this.onData({type:'quiz-read-ok',requestId:p.requestId,operation:payloadJob.op});return;
   }
+  if(p.type==='quiz-archives'||p.type==='quiz-archive-preview')return;
   if(p.type==='quiz-result'||p.type==='quiz-error'){
    const job=this.pending.get(p.requestId);
    if(!job){if(p.type==='quiz-error'&&!p.requestId)this.onData(p);return;}
    if(p.type==='quiz-result'&&(p.build!==UI_BUILD||p.operation!==job.op||p.ok!==true||!Number.isSafeInteger(p.revision))){this.onData({type:job.read?'quiz-read-error':'quiz-error',operation:job.op,requestId:p.requestId,message:'Nieprawidłowa odpowiedź silnika. Sprawdź zgodność kodu C# z panelem.'});return;}
-   if(p.type==='quiz-result'&&job.read){job.acknowledged=true;return;}
+   if(p.type==='quiz-result'&&(job.op==='restorearchive'&&!validArchiveRestoreResult(p.restoreArchive,job.args.archiveId)||job.op==='statusarchive'&&(p.restoreArchive?.status==='restored'&&!validArchiveRestoreResult(p.restoreArchive,this.retryRestore?.archiveId)||p.restoreArchive?.status==='not-applied'&&this.retryRestore?.archiveId&&p.restoreArchive.archiveId!==this.retryRestore.archiveId))){this.onData({type:job.read?'quiz-read-error':'quiz-error',operation:job.op,requestId:p.requestId,message:'Silnik nie potwierdził pełnego wyniku dla wybranego archiwum. Zachowano żądanie do sprawdzenia wyniku przywracania.'});return;}
+   if(p.type==='quiz-result'&&job.read&&job.op!=='statusarchive'){job.acknowledged=true;return;}
    clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.requestId);
-   if(p.type==='quiz-result'){if(!job.read)this.onData({type:'quiz-confirmed',requestId:p.requestId,operation:job.op,revision:p.revision});return;}
+   if(p.type==='quiz-result'){if(job.op==='resetscores'&&this.retryReset?.id===p.requestId)this.retryReset=null;if(job.op==='restorearchive'&&this.retryRestore?.id===p.requestId&&validArchiveRestoreResult(p.restoreArchive))this.clearRestoreRequest();this.onData({type:'quiz-confirmed',requestId:p.requestId,operation:job.op,revision:p.revision,resetArchive:p.resetArchive,archiveFolder:p.archiveFolder,archiveSave:p.archiveSave,restoreArchive:p.restoreArchive});if(job.read)this.onData({type:'quiz-read-ok',requestId:p.requestId,operation:job.op});return;}
    if(job.read){this.onData({...p,type:'quiz-read-error',operation:job.op});return;}
+   this.onData({...p,operation:job.op});return;
   }
   this.onData(p);
  }
  action(op,args={},readRetry=0){if(!this.authenticated||this.socket?.readyState!==WebSocket.OPEN||(!this.engineReady&&op!=='diagnostics'))return false;
-  const id=crypto.randomUUID(),normalized={};for(const[k,v]of Object.entries(args))normalized[k]=String(v);
-  const read=['sync','tick','getscores','getdata','diagnostics','exportbackup','exportbank','previewbackup','previewbank'].includes(op);
+  if(op==='resetscores'&&!this.rankingArchiveReady){this.onData({type:'quiz-error',operation:op,message:RANKING_ARCHIVE_REQUIRED_MESSAGE});return false;}
+  if(['savearchive','listarchives','previewarchive','restorearchive','statusarchive'].includes(op)&&diagnostics?.rankingArchiveManagement!==true){this.onData({type:op==='listarchives'||op==='previewarchive'||op==='statusarchive'?'quiz-read-error':'quiz-error',operation:op,message:'Silnik nie potwierdził obsługi zapisu i przeglądania archiwów. Podmień kod C# i połącz panel ponownie.'});return false;}
+  if(op==='restorearchive'&&this.retryRestore){this.onData({type:'quiz-error',operation:op,requestId:this.retryRestore.id,message:'Poprzednie przywracanie ma niepotwierdzony wynik. Użyj Sprawdź wynik przywracania przed kolejną zmianą.'});return false;}
+  if(op!=='restorearchive'&&RANKING_MUTATIONS.has(op)&&this.retryRestore){this.onData({type:'quiz-error',operation:op,message:'Najpierw sprawdź wynik niepotwierdzonego przywracania rankingu.'});return false;}
+  let id=crypto.randomUUID(),normalized={};for(const[k,v]of Object.entries(args))normalized[k]=String(v);
+  const retryingReset=op==='resetscores'&&this.retryReset!==null;
+  if(op==='resetscores'){if([...this.pending.values()].some(x=>x.op==='resetscores'&&!x.timedOut))return true;if(this.retryReset){id=this.retryReset.id;normalized={...this.retryReset.args};const previous=this.pending.get(id);if(previous){clearTimeout(previous.timer);clearTimeout(previous.lateTimer);this.pending.delete(id);}}else this.retryReset={id,args:{...normalized}};}
+  const read=['sync','tick','getscores','getdata','diagnostics','exportbackup','exportbank','previewbackup','previewbank','listarchives','previewarchive','statusarchive'].includes(op);
   if(read&&[...this.pending.values()].some(x=>x.op===op))return true;
-  const job={op,read,timer:null,lateTimer:null,received:false,timedOut:false};
+  const job={op,read,args:normalized,timer:null,lateTimer:null,received:false,timedOut:false};
   job.onTimeout=()=>{
    if(this.pending.get(id)!==job)return;
    if(read){
     this.pending.delete(id);
-    const labels={getscores:'rankingu',getdata:'danych panelu',sync:'stanu rundy',tick:'stanu rundy',diagnostics:'diagnostyki',exportbackup:'backupu',exportbank:'szablonów',previewbackup:'podglądu backupu',previewbank:'podglądu szablonów'};
+    const labels={getscores:'rankingu',getdata:'danych panelu',sync:'stanu rundy',tick:'stanu rundy',diagnostics:'diagnostyki',exportbackup:'backupu',exportbank:'szablonów',previewbackup:'podglądu backupu',previewbank:'podglądu szablonów',listarchives:'listy archiwów',previewarchive:'podglądu archiwum',statusarchive:'wyniku przywracania'};
     const retryEligible=readRetry===0&&['sync','tick','getscores','getdata','diagnostics'].includes(op);
     this.onData({type:'quiz-read-error',requestId:id,operation:op,message:'Nie udało się odświeżyć '+(labels[op]||'danych')+'. '+(retryEligible?'Ponawiam odczyt.':'Sprawdź połączenie ze Streamer.bot i użyj Odśwież.')});
     if(retryEligible){const retryTimer=setTimeout(()=>{this.readRetryTimers.delete(retryTimer);if(this.authenticated)this.action(op,args,1);},1000);this.readRetryTimers.add(retryTimer);}return;
    }
    else{job.timedOut=true;job.lateTimer=setTimeout(()=>{if(this.pending.get(id)===job)this.pending.delete(id);},60000);}
-   const message='Brak potwierdzenia silnika dla '+op+'. '+(job.received?'Silnik odebrał żądanie, ale jeszcze nie potwierdził zapisu. ':'')+'Wynik nieznany - odśwież dane i sprawdź dziennik zdarzeń Streamer.bot';
-   if(op==='diagnostics')this.onStatus(message,false);this.onData({type:'quiz-error',requestId:id,message});
+   const message=op==='openarchivefolder'?'Brak potwierdzenia otwarcia folderu archiwów. Sprawdź Eksplorator Windows i połączenie ze Streamer.bot.':'Brak potwierdzenia silnika dla '+op+'. '+(job.received?'Silnik odebrał żądanie, ale jeszcze nie potwierdził zapisu. ':'')+'Wynik nieznany - odśwież dane i sprawdź dziennik zdarzeń Streamer.bot'+(op==='resetscores'?'. Ponów reset w tym panelu, aby użyć tego samego żądania.':'');
+   if(op==='diagnostics')this.onStatus(message,false);this.onData({type:'quiz-error',requestId:id,operation:op,message});
   };
   job.timer=setTimeout(job.onTimeout,8000);this.pending.set(id,job);
+  if(op==='restorearchive'){this.retryRestore={id,archiveId:normalized.archiveId};try{sessionStorage.setItem('localQuiz.archiveRestorePending.v1',id);sessionStorage.setItem('localQuiz.archiveRestoreArchiveId.v1',normalized.archiveId);}catch{}}
   const envelope={Protocol:1,Build:UI_BUILD,Id:id,Operation:op,Args:normalized};
   const hostArgs={quizOperation:op,quizRequest:JSON.stringify(envelope),lqeRequestId:id};
   if(RANKING_MUTATIONS.has(op))Object.assign(hostArgs,normalized);
-  if(!read)this.onData({type:'quiz-pending',requestId:id,operation:op});
+  if(!read)this.onData({type:'quiz-pending',requestId:id,operation:op,retryingReset});
+  else if(['listarchives','previewarchive','statusarchive'].includes(op))this.onData({type:'quiz-read-pending',requestId:id,operation:op,args:normalized});
   try{this.socket.send(JSON.stringify({request:'DoAction',action:{name:ACTION_NAME},args:hostArgs,id}));return true;}
   catch{clearTimeout(job.timer);this.pending.delete(id);this.onData({type:read?'quiz-read-error':'quiz-error',requestId:id,operation:op,message:'Nie udało się wysłać żądania do silnika. Połącz panel ponownie.'});return false;}
  }
  sync(){if(this.authenticated){this.action('sync');this.socket.send(JSON.stringify({request:'GetGlobal',variable:'localQuiz_public_v2',persisted:false,id:'quiz-global-'+(++this.counter)}));}}
- close(){this.reconnect=false;this.engineReady=false;this.failPending('Połączenie zamknięte.');clearTimeout(this.timer);this.socket?.close();this.password='';}
+ close(){this.reconnect=false;this.engineReady=false;this.rankingArchiveReady=false;this.failPending('Połączenie zamknięte.');clearTimeout(this.timer);this.socket?.close();this.password='';}
 }
 
 'use strict';
 const $=id=>document.getElementById(id), clone=v=>JSON.parse(JSON.stringify(v)), uid=()=>crypto.randomUUID();
 const MAX_IMPORTED_SCORES=25000, MAX_SCORE_VALUE=100000000;
-const RANKING_MUTATIONS=new Set(['setscore','resetscores','importscores','restoreimportbackup','restorebackup','restoresnapshot','reveal','rescore','undo']);
+const RANKING_MUTATIONS=new Set(['setscore','resetscores','importscores','restoreimportbackup','restorebackup','restoresnapshot','reveal','rescore','undo','restorearchive']);
+const RANKING_ARCHIVE_REQUIRED_MESSAGE='Reset nie został wysłany. Silnik nie potwierdził obsługi archiwów rankingu. Podmień kod C# akcji QUIZ - Silnik na wersję z automatyczną archiwizacją i połącz panel ponownie.';
 let quizData=null, currentRound=null, publicState=null, allScores=[], snapshots=[], editorQuestion=null, editingSet=null, dialogQuestion=null, dialogCallback=null, pendingImport=null;
 let serverClockOffset=0,lastRevision=-1,lastScoresRevision=-1,lastDataRevision=-1,toastTimer,draftTimer,browserMigrationSent=false,lastDataAt=0;
 let pendingStart=null,pendingStartTimer=null;
@@ -558,8 +635,10 @@ let pendingScoreUserId=null;
 const SIMPLE_TABS=new Set(['live','questions','bank','ranking','history','help']);
 const UI_MODE_STORAGE_KEY='localQuiz.uiMode.v1';
 let uiMode='simple';
-let currentTab='live',rankingRequestId='',rankingConfirmedRevision=-1,rankingConfirmedOperation='';
+let currentTab='live',rankingRequestId='',rankingConfirmedRevision=-1,rankingConfirmedOperation='',rankingConfirmedMessage='',rankingConfirmedError=false,rankingConfirmedReplay=false;
 const readWarnings=new Map();
+const ARCHIVE_LIST_LIMIT=20,ARCHIVE_PREVIEW_LIMIT=100;
+let archiveItems=[],archiveListOffset=0,archiveListTotal=0,archiveListHasMore=false,archiveListLoaded=false,archiveListRequest=null,archivePreviewRequest=null,archiveStatusRequest=null,selectedRankingArchive=null,archiveRestoreRevision=-1,archiveSaveRequestId='',archiveSaveUnknown=false;
 const defaultKeys={start:'Ctrl+Alt+KeyS',lock:'Ctrl+Alt+KeyL',reveal:'Ctrl+Alt+KeyR',cancel:'Ctrl+Alt+KeyC',next:'Ctrl+Alt+ArrowRight',previous:'Ctrl+Alt+ArrowLeft',pause:'Ctrl+Alt+KeyP',addtime:'Ctrl+Alt+ArrowUp',subtracttime:'Ctrl+Alt+ArrowDown',visibility:'Ctrl+Alt+KeyH',podium:'Ctrl+Alt+KeyO'};
 const defaultSettings=()=>({TeamMode:false,Cooldowns:true,UserCooldown:10,GlobalCooldown:3,Shortcuts:false,Keys:clone(defaultKeys),Overlay:{Layout:'FULL',Accent:'#9870ff',Scale:100,X:40,Y:40,Leaderboard:true,Top:5,Percentages:true,Timer:true,Opacity:95,Animations:true,Sounds:false,Volume:40,Podium:false}});
 const newQuestion=()=>({Id:uid(),Name:'',Text:'',Category:'',Tags:[],Options:[1,2,3,4].map(()=>({Id:uid(),Text:'',Correct:false,Partial:false,Points:null,AuthorIndex:0})),Mode:'QUIZ',Voting:'LIVE',Policy:'LAST',ChangeLimit:2,Duration:60,Shuffle:false,AutoReveal:false,Scoring:'adjacent',FullPoints:3,PartialPoints:1,Speed:false,SpeedFast:2,SpeedSlow:1});
@@ -594,33 +673,109 @@ function saveLocalDraft(){try{localStorage.setItem('localQuiz.draft.v2',JSON.str
 function loadEditor(q){editorQuestion=clone(q);renderEditor($('question-editor'),editorQuestion,saveLocalDraft);saveLocalDraft();}
 function renderQuick(){$('quick-summary').replaceChildren(el('h3',editorQuestion.Text||'Wpisz treść pytania'),el('p',`${editorQuestion.Options.length} odpowiedzi - ${editorQuestion.Mode} - ${editorQuestion.Duration}s`,'hint'));}
 function setTabView(id){currentTab=id;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.id===id));$('tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));}
-function showTab(id){if(uiMode==='simple'&&!SIMPLE_TABS.has(id))setUiMode('advanced');setTabView(id);if(connection.authenticated){action('getdata');if(id==='ranking')action('getscores');}if(id==='diagnostics')renderDiagnostics();}
+function showTab(id){if(uiMode==='simple'&&!SIMPLE_TABS.has(id))setUiMode('advanced');setTabView(id);if(connection.authenticated){action('getdata');if(id==='ranking'){action('getscores');if(!archiveListLoaded&&!archiveListRequest&&diagnostics?.rankingArchiveManagement===true)requestRankingArchives(0);}}if(id==='diagnostics')renderDiagnostics();}
 for(const[id,name]of [['live','Live / Runda'],['questions','Pytanie / Szkic'],['bank','Szablony'],['sets','Zestawy'],['ranking','Ranking / CSV'],['teams','Drużyny'],['history','Historia'],['overlay','Overlay'],['settings','Ustawienia'],['backup','Backup'],['diagnostics','Diagnostyka'],['help','Pomoc']]){const b=button(name,()=>showTab(id));b.dataset.tab=id;if(!SIMPLE_TABS.has(id))b.dataset.uiAdvanced='';if(id==='live')b.className='active';$('tabs').append(b);}
 $('ui-mode-simple').onclick=()=>setUiMode('simple');
 $('ui-mode-advanced').onclick=()=>setUiMode('advanced');
 try{setUiMode(localStorage.getItem(UI_MODE_STORAGE_KEY),false);}catch{setUiMode('simple',false);}
-const connection=new QuizConnection(receive,(label,ok)=>{$('connection-status').textContent=label;$('connection-status').className=ok?'status-pass':'status-fail';if(ok){lastRevision=-1;lastScoresRevision=-1;lastDataRevision=-1;action('getdata');}renderDiagnostics();});
+const connection=new QuizConnection(receive,(label,ok)=>{$('connection-status').textContent=label;$('connection-status').className=ok?'status-pass':'status-fail';if(ok){lastRevision=-1;lastScoresRevision=-1;lastDataRevision=-1;action('getdata');}renderDiagnostics();updateArchiveControls();});
 function clearPendingStart(success=false){clearTimeout(pendingStartTimer);pendingStartTimer=null;if(success&&pendingStart){toast('Runda wystartowała.');showTab('live');}pendingStart=null;}
 function rankingStatus(message,error=false){$('ranking-operation-status').textContent=message;$('ranking-operation-status').className=error?'status-fail':'hint';$('ranking-operation-status').hidden=false;}
-function rankingRefreshed(revision){if(rankingConfirmedRevision>=0&&revision>=rankingConfirmedRevision){rankingStatus(rankingConfirmedOperation==='resetscores'?'Reset punktacji zapisany. Ranking jest aktualny.':rankingConfirmedOperation==='restoreimportbackup'?'Cofnięcie importu zapisane. Ranking jest aktualny.':'Silnik potwierdził zapis. Ranking jest aktualny.');rankingConfirmedRevision=-1;rankingRequestId='';rankingConfirmedOperation='';}}
+function rankingResetResult(archive){if(archive?.status==='archived'&&typeof archive.path==='string'&&archive.path.trim())return{message:(archive.replayed===true?'Potwierdzono wcześniejszy reset. Nie wykonano ponownego resetu. Plik archiwum: ':'Ranking zarchiwizowany i wyzerowany. Plik archiwum: ')+archive.path,error:false,replayed:archive.replayed===true};if(archive?.status==='empty')return{message:archive.replayed===true?'Potwierdzono wcześniejszy reset pustego rankingu. Nie wykonano ponownego resetu ani nie utworzono pustego archiwum.':'Ranking wyzerowany. Ranking był pusty - nie utworzono pustego archiwum.',error:false,replayed:archive.replayed===true};return{message:'Reset punktacji potwierdzony. Silnik nie potwierdził archiwizacji. Sprawdź zgodność panelu i silnika.',error:true};}
+function rankingRefreshed(revision){if(rankingConfirmedRevision>=0&&revision>=rankingConfirmedRevision){rankingStatus((rankingConfirmedReplay?'Aktualny ranking został odświeżony. ':'')+(rankingConfirmedMessage||(rankingConfirmedOperation==='restoreimportbackup'?'Cofnięcie importu zapisane. Ranking jest aktualny.':'Silnik potwierdził zapis. Ranking jest aktualny.')),rankingConfirmedError);rankingConfirmedRevision=-1;rankingRequestId='';rankingConfirmedOperation='';rankingConfirmedMessage='';rankingConfirmedError=false;rankingConfirmedReplay=false;}}
+function archiveFolderStatus(message,error=false){$('archive-folder-status').textContent=message;$('archive-folder-status').className=error?'status-fail':'hint';$('archive-folder-status').hidden=false;}
+$('open-archive-folder').onclick=()=>{try{requireUI(connection.authenticated&&connection.engineReady,'Najpierw połącz panel ze Streamer.bot.');requireUI(diagnostics?.openArchiveFolder===true,'Silnik nie potwierdził obsługi otwierania folderu. Podmień kod C# na 2.0.2 i połącz panel ponownie.');requireUI(![...connection.pending.values()].some(x=>x.op==='openarchivefolder'&&!x.timedOut),'Czekam na potwierdzenie otwarcia folderu archiwów.');requireUI(action('openarchivefolder'),'Nie udało się wysłać żądania otwarcia folderu. Sprawdź połączenie.');}catch(e){archiveFolderStatus(e.message,true);toast(e.message);}};
+function rankingArchiveStatus(message,error=false){$('ranking-archive-status').textContent=message;$('ranking-archive-status').className=error?'status-fail':'hint';}
+function archiveDate(meta){const date=new Date(meta.createdAt);return Number.isFinite(date.getTime())?date.toLocaleString('pl'):'Nieprawidłowa data';}
+function archiveType(type){return({manual:'Ręczny',automatic:'Automatyczny',safety:'Kopia bezpieczeństwa'})[type]||'Nieznany';}
+function validArchiveMetadata(meta){return meta&&typeof meta==='object'&&typeof meta.archiveId==='string'&&/^[a-zA-Z0-9_-]{1,180}$/.test(meta.archiveId)&&typeof meta.name==='string'&&meta.name.length<=160&&Number.isSafeInteger(meta.createdAt)&&meta.createdAt>0&&Number.isFinite(new Date(meta.createdAt).getTime())&&['manual','automatic','safety'].includes(meta.type)&&Number.isInteger(meta.users)&&meta.users>=0&&meta.users<=MAX_IMPORTED_SCORES&&(meta.totalPoints===null||Number.isSafeInteger(meta.totalPoints)&&meta.totalPoints>=0)&&typeof meta.appVersion==='string'&&meta.appVersion.length<=30;}
+function validArchiveRestoreResult(result,expectedArchiveId=''){return result?.status==='restored'&&typeof result.archiveId==='string'&&/^[a-zA-Z0-9_-]{1,180}$/.test(result.archiveId)&&(!expectedArchiveId||result.archiveId===expectedArchiveId)&&typeof result.backupArchiveId==='string'&&/^[a-zA-Z0-9_-]{1,180}$/.test(result.backupArchiveId)&&typeof result.name==='string'&&result.name.length<=160&&Number.isInteger(result.users)&&result.users>=0&&result.users<=MAX_IMPORTED_SCORES;}
+function archiveBusy(op){return [...connection.pending.values()].some(x=>x.op===op&&!x.timedOut);}
+function archiveRoundActive(){return Boolean(pendingStart||[publicState?.status,currentRound?.Status,quizData?.Current?.Status].some(x=>x==='open'||x==='locked'));}
+function updateArchiveControls(){
+ const ready=connection.authenticated&&connection.engineReady&&diagnostics?.rankingArchiveManagement===true,listBusy=Boolean(archiveListRequest)||archiveBusy('listarchives'),previewBusy=Boolean(archivePreviewRequest)||archiveBusy('previewarchive'),restoreBusy=Boolean(connection.retryRestore);
+ $('save-ranking-archive').disabled=!ready||archiveBusy('savearchive');$('confirm-save-archive').disabled=!ready||archiveBusy('savearchive');
+ for(const id of ['refresh-ranking-archives','archive-search-submit'])$(id).disabled=!ready||listBusy;
+ $('archive-page-previous').disabled=!ready||listBusy||archiveListOffset<=0;$('archive-page-next').disabled=!ready||listBusy||!archiveListHasMore;
+ $('archive-preview-previous').disabled=!ready||previewBusy||!selectedRankingArchive||selectedRankingArchive.offset<=0;$('archive-preview-next').disabled=!ready||previewBusy||!selectedRankingArchive?.hasMore;
+ $('restore-ranking-archive').disabled=!ready||previewBusy||!selectedRankingArchive||selectedRankingArchive.restoreAllowed!==true||restoreBusy||archiveRoundActive();
+ $('confirm-restore-archive').disabled=!ready||restoreBusy||archiveRoundActive();$('archive-restore-check').hidden=!restoreBusy;$('archive-restore-check').disabled=!ready||Boolean(archiveStatusRequest)||archiveBusy('statusarchive')||archiveBusy('restorearchive');
+ for(const b of $('ranking-archive-body').querySelectorAll('button'))b.disabled=!ready||previewBusy;
+}
+function requestRankingArchives(offset=0){try{requireUI(!archiveListRequest,'Czekam na pobranie listy archiwów.');requireUI(action('listarchives',{search:$('archive-search').value.trim(),offset:String(Math.max(0,offset)),limit:String(ARCHIVE_LIST_LIMIT)}),'Połącz panel przed pobraniem archiwów.');}catch(e){rankingArchiveStatus(e.message,true);}}
+function requestRankingArchive(archiveId,offset=0){try{requireUI(!archivePreviewRequest,'Czekam na pobranie podglądu.');requireUI(action('previewarchive',{archiveId,offset:String(Math.max(0,offset)),limit:String(ARCHIVE_PREVIEW_LIMIT)}),'Połącz panel przed pobraniem podglądu.');}catch(e){rankingArchiveStatus(e.message,true);}}
+function renderRankingArchives(){
+ $('ranking-archive-body').replaceChildren();for(const item of archiveItems){const row=el('tr');row.append(el('td',item.name,'archive-name'),el('td',archiveDate(item)),el('td',archiveType(item.type)),el('td',item.users),el('td',item.totalPoints===null?'Brak danych':item.totalPoints),el('td',item.appVersion));const actions=el('td');actions.append(button('Podgląd',()=>requestRankingArchive(item.archiveId)));row.append(actions);$('ranking-archive-body').append(row);}
+ if(!archiveItems.length){const row=el('tr'),cell=el('td','Brak pasujących archiwów.','hint');cell.colSpan=7;row.append(cell);$('ranking-archive-body').append(row);}
+ $('archive-page-status').textContent=archiveListTotal?`${archiveListOffset+1}-${archiveListOffset+archiveItems.length} / ${archiveListTotal} archiwów`:'0 archiwów';updateArchiveControls();
+}
+function renderRankingArchivePreview(){
+ const preview=selectedRankingArchive;if(!preview)return;const meta=preview.archive;$('archive-preview').hidden=false;$('archive-preview-title').textContent='Podgląd historyczny - '+meta.name;$('archive-preview-meta').textContent=`${archiveDate(meta)} - ${archiveType(meta.type)} - ${meta.users} widzów - wersja ${meta.appVersion}`;
+ $('archive-preview-body').replaceChildren();for(const score of preview.scores){const row=el('tr');for(const value of [score.rank,score.userName,score.userId,score.points,score.correctAnswers,score.answeredQuestions])row.append(el('td',value));row.children[2].className='user-id';$('archive-preview-body').append(row);}
+ if(!preview.scores.length){const row=el('tr'),cell=el('td','Archiwum nie zawiera wyników widzów.','hint');cell.colSpan=6;row.append(cell);$('archive-preview-body').append(row);}
+ $('archive-preview-page-status').textContent=preview.total?`${preview.offset+1}-${preview.offset+preview.scores.length} / ${preview.total} widzów`:'0 widzów';const warning=preview.teamWarning||(archiveRoundActive()?'Przywracanie jest zablokowane do zakończenia lub anulowania rundy.':preview.restoreAllowed?'':'Silnik zablokował przywracanie. Odśwież podgląd po sprawdzeniu stanu rundy i drużyn.');$('archive-team-warning').textContent=warning;$('archive-team-warning').hidden=!warning;updateArchiveControls();
+}
+function receiveRankingArchive(p){
+ const archiveOperation=['savearchive','listarchives','previewarchive','restorearchive','statusarchive'].includes(p.operation);
+ if(p.type==='quiz-read-pending'&&archiveOperation){if(p.operation==='listarchives')archiveListRequest={id:p.requestId,args:p.args};if(p.operation==='previewarchive')archivePreviewRequest={id:p.requestId,args:p.args};if(p.operation==='statusarchive')archiveStatusRequest={id:p.requestId};rankingArchiveStatus(p.operation==='listarchives'?'Pobieram listę archiwów.':p.operation==='previewarchive'?'Pobieram podgląd historyczny.':'Sprawdzam zapisany wynik przywracania.');updateArchiveControls();return true;}
+ if(p.type==='quiz-archives'){
+  if(!archiveListRequest||p.requestId!==archiveListRequest.id)return true;
+  try{requireUI(p.appVersion===APP_VERSION&&Array.isArray(p.items)&&p.items.length<=ARCHIVE_LIST_LIMIT&&p.items.every(validArchiveMetadata)&&Number.isSafeInteger(p.total)&&p.total>=0&&Number.isInteger(p.offset)&&p.offset===Number(archiveListRequest.args.offset)&&p.limit===ARCHIVE_LIST_LIMIT&&typeof p.hasMore==='boolean','Nieprawidłowa lista archiwów.');archiveItems=p.items;archiveListOffset=p.offset;archiveListTotal=p.total;archiveListHasMore=p.hasMore;archiveListLoaded=true;archiveSaveUnknown=false;renderRankingArchives();rankingArchiveStatus('Lista archiwów od najnowszych.'+(p.truncated?' Lista obejmuje najnowsze archiwa mieszczące się w limicie przeglądu katalogu.':'')+(Number.isInteger(p.skipped)&&p.skipped>0?` Pominięto niedostępne lub nieprawidłowe pliki: ${p.skipped}.`:''));}catch(e){rankingArchiveStatus(e.message,true);}return true;
+ }
+ if(p.type==='quiz-archive-preview'){
+  if(!archivePreviewRequest||p.requestId!==archivePreviewRequest.id)return true;
+  try{requireUI(p.appVersion===APP_VERSION&&validArchiveMetadata(p.archive)&&p.archive.archiveId===archivePreviewRequest.args.archiveId&&typeof p.archiveHash==='string'&&/^[a-f0-9]{64}$/.test(p.archiveHash)&&p.total===p.archive.users&&Number.isInteger(p.offset)&&p.offset===Number(archivePreviewRequest.args.offset)&&p.limit===ARCHIVE_PREVIEW_LIMIT&&typeof p.hasMore==='boolean'&&typeof p.restoreAllowed==='boolean'&&(p.teamWarning==null||typeof p.teamWarning==='string'&&p.teamWarning.length<=1000)&&Array.isArray(p.scores)&&p.scores.length<=ARCHIVE_PREVIEW_LIMIT,'Nieprawidłowy podgląd archiwum.');for(const score of p.scores)requireUI(score&&Number.isInteger(score.rank)&&score.rank>0&&typeof score.userId==='string'&&score.userId.length<=160&&typeof score.userName==='string'&&score.userName.length<=80&&['points','correctAnswers','answeredQuestions'].every(k=>Number.isInteger(score[k])&&score[k]>=0&&score[k]<=MAX_SCORE_VALUE)&&score.correctAnswers<=score.answeredQuestions,'Nieprawidłowy historyczny wynik.');selectedRankingArchive=p;renderRankingArchivePreview();rankingArchiveStatus('Otworzono podgląd historyczny. Aktualne punkty pozostają bez zmian.');}catch(e){selectedRankingArchive=null;$('archive-preview').hidden=true;rankingArchiveStatus(e.message,true);}return true;
+ }
+ if(p.type==='quiz-read-ok'&&archiveOperation){if(p.operation==='listarchives'&&archiveListRequest?.id===p.requestId)archiveListRequest=null;if(p.operation==='previewarchive'&&archivePreviewRequest?.id===p.requestId)archivePreviewRequest=null;if(p.operation==='statusarchive'&&archiveStatusRequest?.id===p.requestId)archiveStatusRequest=null;updateArchiveControls();return true;}
+ if(p.type==='quiz-read-error'&&archiveOperation){if(p.operation==='listarchives')archiveListRequest=null;if(p.operation==='previewarchive')archivePreviewRequest=null;if(p.operation==='statusarchive')archiveStatusRequest=null;rankingArchiveStatus(p.message||'Nie udało się pobrać archiwum.',true);updateArchiveControls();return true;}
+ if(p.type==='quiz-pending'&&p.operation==='savearchive'){archiveSaveRequestId=p.requestId;archiveSaveUnknown=false;rankingArchiveStatus('Zapisuję kopię aktualnego rankingu. Czekam na potwierdzenie silnika.');updateArchiveControls();return true;}
+ if(p.type==='quiz-received'&&p.operation==='savearchive'){rankingArchiveStatus('Silnik zapisuje archiwum rankingu.');return true;}
+ if(p.type==='quiz-confirmed'&&p.operation==='savearchive'){archiveSaveRequestId='';const saved=p.archiveSave?.status==='archived'&&typeof p.archiveSave.archiveId==='string'&&/^[a-zA-Z0-9_-]{1,180}$/.test(p.archiveSave.archiveId)&&typeof p.archiveSave.name==='string'&&p.archiveSave.name.length<=160&&Number.isInteger(p.archiveSave.users)&&p.archiveSave.users>=0&&p.archiveSave.users<=MAX_IMPORTED_SCORES;const message=saved?'Ranking zapisany w archiwum: '+p.archiveSave.name:'Silnik nie potwierdził poprawnego archiwum. Sprawdź listę zapisów.';rankingArchiveStatus(message,!saved);toast(message);archiveSaveUnknown=!saved;updateArchiveControls();if(saved&&!archiveListRequest)requestRankingArchives(0);return true;}
+ if(p.type==='quiz-error'&&p.operation==='savearchive'){archiveSaveUnknown=true;rankingArchiveStatus((p.message||'Niepotwierdzony wynik zapisu archiwum.')+' Przed kolejnym zapisem odśwież listę archiwów i sprawdź, czy kopia powstała.',true);updateArchiveControls();return true;}
+ if(p.type==='quiz-error'&&p.operation==='restorearchive'){rankingArchiveStatus((p.message||'Niepotwierdzony wynik przywracania.')+(connection.retryRestore?' Użyj Sprawdź wynik przywracania. Operacja nie zostanie automatycznie ponowiona.':''),true);updateArchiveControls();return false;}
+ if(p.operation==='restorearchive'&&['quiz-pending','quiz-received','quiz-confirmed'].includes(p.type)){updateArchiveControls();if(p.type==='quiz-confirmed'){if(!validArchiveRestoreResult(p.restoreArchive)){const message='Silnik nie potwierdził pełnego wyniku przywracania i kopii bezpieczeństwa. Użyj Sprawdź wynik przywracania.';rankingArchiveStatus(message,true);rankingStatus(message,true);toast(message);return true;}rankingArchiveStatus('Przywrócono ranking: '+p.restoreArchive.name+'. Kopia bezpieczeństwa: '+p.restoreArchive.backupArchiveId);if(!archiveListRequest)requestRankingArchives(0);}return false;}
+ if(p.type==='quiz-confirmed'&&p.operation==='statusarchive'){
+  archiveStatusRequest=null;const result=p.restoreArchive;
+  if(validArchiveRestoreResult(result)){const previousId=connection.retryRestore?.id;connection.clearRestoreRequest();rankingConfirmedRevision=p.revision;rankingConfirmedOperation='restorearchive';rankingConfirmedMessage='Potwierdzono wcześniejsze przywrócenie rankingu. Kopia bezpieczeństwa: '+result.backupArchiveId;rankingConfirmedError=false;rankingConfirmedReplay=true;rankingRequestId=previousId||'';rankingStatus(rankingConfirmedMessage);rankingArchiveStatus(rankingConfirmedMessage);rankingRefreshed(lastScoresRevision);action('getscores');action('getdata');requestRankingArchives(0);}
+  else if(result?.status==='not-applied'||result?.status==='not-found'){connection.clearRestoreRequest();rankingArchiveStatus(result.status==='not-applied'?'Silnik potwierdził, że ranking nie został przywrócony. Aby rozpocząć nową operację, ponownie otwórz podgląd i potwierdź przywracanie.':'Silnik nie znalazł zapisanego żądania przywracania. Odśwież ranking i ponownie otwórz podgląd przed nową operacją.');selectedRankingArchive=null;$('archive-preview').hidden=true;action('getscores');action('getdata');}
+  else rankingArchiveStatus('Wynik przywracania nadal jest niepewny. Nie wykonuj kolejnej zmiany rankingu. Sprawdź dziennik Streamer.bot i ponownie sprawdź wynik.',true);updateArchiveControls();return true;
+ }
+ return false;
+}
+$('save-ranking-archive').onclick=()=>{try{requireUI(!archiveBusy('savearchive'),'Zapis jest już wysłany. Poczekaj na potwierdzenie.');requireUI(!archiveSaveUnknown,'Odśwież listę archiwów po niepotwierdzonym zapisie, zanim zapiszesz kolejną kopię.');$('archive-save-name').value='';$('archive-save-error').hidden=true;$('archive-save-dialog').showModal();$('archive-save-name').focus();}catch(e){rankingArchiveStatus(e.message,true);}};
+function submitRankingArchive(){try{requireUI(!archiveBusy('savearchive'),'Zapis jest już wysłany.');requireUI(action('savearchive',{archiveName:$('archive-save-name').value.trim()}),'Połącz panel przed zapisem archiwum.');$('archive-save-dialog').close();}catch(e){$('archive-save-error').textContent=e.message;$('archive-save-error').hidden=false;}}
+$('confirm-save-archive').onclick=submitRankingArchive;$('cancel-save-archive').onclick=()=>$('archive-save-dialog').close();$('archive-save-name').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.repeat){e.preventDefault();submitRankingArchive();}});
+$('refresh-ranking-archives').onclick=()=>requestRankingArchives(0);$('archive-search-submit').onclick=()=>requestRankingArchives(0);$('archive-search').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.repeat){e.preventDefault();requestRankingArchives(0);}});$('archive-page-previous').onclick=()=>requestRankingArchives(Math.max(0,archiveListOffset-ARCHIVE_LIST_LIMIT));$('archive-page-next').onclick=()=>requestRankingArchives(archiveListOffset+ARCHIVE_LIST_LIMIT);
+$('close-archive-preview').onclick=()=>{archivePreviewRequest=null;selectedRankingArchive=null;$('archive-preview').hidden=true;updateArchiveControls();};$('archive-preview-previous').onclick=()=>{if(selectedRankingArchive)requestRankingArchive(selectedRankingArchive.archive.archiveId,Math.max(0,selectedRankingArchive.offset-ARCHIVE_PREVIEW_LIMIT));};$('archive-preview-next').onclick=()=>{if(selectedRankingArchive)requestRankingArchive(selectedRankingArchive.archive.archiveId,selectedRankingArchive.offset+ARCHIVE_PREVIEW_LIMIT);};
+$('restore-ranking-archive').onclick=()=>{try{requireUI(selectedRankingArchive?.restoreAllowed===true,'To archiwum nie może być bezpiecznie przywrócone.');requireUI(!archiveRoundActive(),'Zakończ lub anuluj aktywną rundę przed przywróceniem.');requireUI(!connection.retryRestore,'Najpierw sprawdź wynik poprzedniego przywracania.');requireUI(lastScoresRevision>=lastRevision&&lastScoresRevision>=lastDataRevision,'Odśwież aktualny ranking przed przywróceniem.');requireUI(![...connection.pending.values()].some(x=>RANKING_MUTATIONS.has(x.op)),'Poczekaj na zakończenie bieżącej zmiany rankingu.');archiveRestoreRevision=lastScoresRevision;const meta=selectedRankingArchive.archive;$('restore-archive-summary').replaceChildren(el('p','Archiwum: '+meta.name),el('p','Data utworzenia: '+archiveDate(meta)),el('p',`Użytkownicy w archiwum: ${meta.users}. Użytkownicy w obecnym rankingu: ${allScores.length}.`));$('archive-restore-confirmation').value='';$('archive-restore-error').hidden=true;$('archive-restore-dialog').showModal();$('archive-restore-confirmation').focus();}catch(e){rankingArchiveStatus(e.message,true);}};
+function submitRankingArchiveRestore(){try{requireUI($('archive-restore-confirmation').value==='PRZYWROC','Wpisz dokładnie PRZYWROC, aby potwierdzić zastąpienie rankingu.');requireUI(selectedRankingArchive?.restoreAllowed===true,'Ponownie otwórz podgląd archiwum.');requireUI(!archiveRoundActive(),'Zakończ lub anuluj aktywną rundę.');requireUI(!connection.retryRestore,'Najpierw sprawdź wynik poprzedniego przywracania.');requireUI(archiveRestoreRevision===Math.max(lastRevision,lastScoresRevision,lastDataRevision),'Aktualny stan zmienił się od otwarcia potwierdzenia. Odśwież ranking i ponownie otwórz potwierdzenie.');requireUI(![...connection.pending.values()].some(x=>RANKING_MUTATIONS.has(x.op)),'Poczekaj na zakończenie bieżącej zmiany rankingu.');requireUI(action('restorearchive',{archiveId:selectedRankingArchive.archive.archiveId,archiveHash:selectedRankingArchive.archiveHash,expectedRevision:String(archiveRestoreRevision),confirmText:'PRZYWROC'}),'Połącz panel przed przywróceniem.');$('archive-restore-dialog').close();}catch(e){$('archive-restore-error').textContent=e.message;$('archive-restore-error').hidden=false;}}
+$('confirm-restore-archive').onclick=submitRankingArchiveRestore;$('cancel-restore-archive').onclick=()=>$('archive-restore-dialog').close();$('archive-restore-confirmation').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.repeat){e.preventDefault();submitRankingArchiveRestore();}});
+$('archive-restore-check').onclick=()=>{try{requireUI(connection.retryRestore,'Brak niepotwierdzonego przywracania.');requireUI(!archiveStatusRequest&&!archiveBusy('restorearchive'),'Poczekaj na odpowiedź silnika.');requireUI(action('statusarchive',{operationId:connection.retryRestore.id}),'Połącz panel przed sprawdzeniem wyniku.');}catch(e){rankingArchiveStatus(e.message,true);}};
 function receive(p){
+ if(receiveRankingArchive(p))return;
+ if(p.operation==='openarchivefolder'){
+  if(p.type==='quiz-pending'){archiveFolderStatus('Wysłano prośbę o otwarcie folderu archiwów.');return;}
+  if(p.type==='quiz-received'){archiveFolderStatus('Silnik otwiera folder archiwów.');return;}
+  if(p.type==='quiz-confirmed'){const opened=p.archiveFolder?.status==='opened'&&typeof p.archiveFolder.path==='string'&&p.archiveFolder.path.trim();const message=opened?'Otworzono folder archiwów: '+p.archiveFolder.path:'Silnik nie potwierdził otwarcia folderu archiwów. Sprawdź zgodność panelu i kodu C#.';archiveFolderStatus(message,!opened);toast(message);return;}
+  if(p.type==='quiz-error'){const message=p.message||'Nie udało się otworzyć folderu archiwów.';archiveFolderStatus(message,true);toast(message);return;}
+ }
  if(p.type==='quiz-read-error'){readWarnings.set(p.operation,p.message);$('read-status').textContent=[...readWarnings.values()].join(' ');$('read-status').hidden=false;return;}
  if(p.type==='quiz-read-ok'){readWarnings.delete(p.operation);$('read-status').textContent=[...readWarnings.values()].join(' ');$('read-status').hidden=readWarnings.size===0;return;}
- if(p.type==='quiz-pending'){if(RANKING_MUTATIONS.has(p.operation)){rankingRequestId=p.requestId;rankingConfirmedRevision=-1;rankingStatus('Wysłano zmianę rankingu do silnika. Czekam na potwierdzenie zapisu…');}return;}
+ if(p.type==='quiz-pending'){if(RANKING_MUTATIONS.has(p.operation)){rankingRequestId=p.requestId;rankingConfirmedRevision=-1;rankingConfirmedMessage='';rankingConfirmedError=false;rankingConfirmedReplay=false;rankingStatus(p.retryingReset?'Ponowiono ten sam reset. Czekam na potwierdzenie zapisu.':'Wysłano zmianę rankingu do silnika. Czekam na potwierdzenie zapisu…');}return;}
  if(p.type==='quiz-received'){if(p.requestId===rankingRequestId)rankingStatus('Silnik odebrał zmianę. Czekam na zakończenie zapisu…');return;}
- if(p.type==='quiz-confirmed'){if(p.operation==='start'&&pendingStart){clearPendingStart(true);return;}if(RANKING_MUTATIONS.has(p.operation)){if(p.requestId===rankingRequestId){rankingConfirmedRevision=p.revision;rankingConfirmedOperation=p.operation;rankingStatus('Silnik potwierdził zapis. Pobieram aktualny ranking…');rankingRefreshed(lastScoresRevision);}action('getscores');action('getdata');}const messages={setscore:'Korekta punktów zapisana.',resetscores:'Ranking wyzerowany.',restoreimportbackup:'Przywrócono ranking sprzed importu CSV.',cancel:'Runda anulowana / wyczyszczona.'};toast(messages[p.operation]||'Zmiany zapisane.');return;}
+ if(p.type==='quiz-confirmed'){if(p.operation==='start'&&pendingStart){clearPendingStart(true);return;}const resetResult=p.operation==='resetscores'?rankingResetResult(p.resetArchive):null,restoreMessage=p.operation==='restorearchive'?'Przywrócono ranking: '+p.restoreArchive.name+'. Kopia bezpieczeństwa: '+p.restoreArchive.backupArchiveId:'';if(RANKING_MUTATIONS.has(p.operation)){if(p.requestId===rankingRequestId){rankingConfirmedRevision=p.revision;rankingConfirmedOperation=p.operation;rankingConfirmedMessage=resetResult?.message||restoreMessage;rankingConfirmedError=resetResult?.error||false;rankingConfirmedReplay=resetResult?.replayed||p.restoreArchive?.replayed===true;rankingStatus(rankingConfirmedMessage||'Silnik potwierdził zapis. Pobieram aktualny ranking…',rankingConfirmedError);rankingRefreshed(lastScoresRevision);}action('getscores');action('getdata');}const messages={setscore:'Korekta punktów zapisana.',restoreimportbackup:'Przywrócono ranking sprzed importu CSV.',cancel:'Runda anulowana / wyczyszczona.'};toast(resetResult?.message||restoreMessage||messages[p.operation]||'Zmiany zapisane.');return;}
  if(p.type==='quiz-error'){if(pendingStart){clearPendingStart(false);showTab('questions');}if(rankingRequestId&&(p.requestId===rankingRequestId||!p.requestId)){rankingConfirmedRevision=-1;rankingStatus(p.message||'Silnik nie potwierdził zmiany rankingu.',true);}toast(p.message||'Operacja odrzucona.');$('confirm-import').disabled=!pendingImport?.validated;return;}
  if(p.type==='quiz-notice'){toast(p.message);if(connection.authenticated){action('getscores');action('getdata');}return;}
- if(p.type==='quiz-state'){if(p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||p.revision<lastRevision)return;lastRevision=p.revision;publicState=p;serverClockOffset=Number(p.serverNow)-Date.now();updateLiveHeader();renderDiagnostics();return;}
- if(p.type==='quiz-admin'){if(p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||p.revision<lastRevision)return;currentRound=p.current;renderLive();$('queue-status').textContent=`Pytanie ${Math.min(p.queueIndex+1,p.queueCount)} / ${p.queueCount}`;return;}
+ if(p.type==='quiz-state'){if(p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||p.revision<lastRevision)return;lastRevision=p.revision;publicState=p;serverClockOffset=Number(p.serverNow)-Date.now();updateLiveHeader();renderDiagnostics();updateArchiveControls();return;}
+ if(p.type==='quiz-admin'){if(p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||p.revision<lastRevision)return;currentRound=p.current;renderLive();$('queue-status').textContent=`Pytanie ${Math.min(p.queueIndex+1,p.queueCount)} / ${p.queueCount}`;updateArchiveControls();return;}
  if(p.type==='quiz-scores'){if(p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||p.revision<lastRevision||p.revision<lastScoresRevision||!Array.isArray(p.scores)||p.scores.length>25000)return;lastScoresRevision=p.revision;allScores=p.scores;renderRanking();rankingRefreshed(p.revision);return;}
  if(p.type==='quiz-data'){
   if(p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||p.revision<lastRevision||p.revision<lastDataRevision)return;
-  const d=p.data;requireUI(d?.Schema===2&&Array.isArray(d.Bank)&&d.Bank.length<=1000&&Array.isArray(d.History)&&d.History.length<=100&&Array.isArray(d.Templates)&&d.Templates.length<=100&&d.Settings&&Array.isArray(d.Sets)&&d.Sets.length<=100,'Niepoprawny stan V2.');const freshScores=p.revision>lastScoresRevision?rankingFromAggregate(d.Scores):null;lastDataRevision=p.revision;quizData=d;snapshots=Array.isArray(p.snapshots)?p.snapshots.slice(0,5):[];lastDataAt=Date.now();if(freshScores){lastScoresRevision=p.revision;allScores=freshScores;renderRanking();rankingRefreshed(p.revision);}renderBank();renderSets();renderTeams();renderHistory();renderSnapshots();renderSettings();renderDiagnostics();migrateBrowser();return;
+  const d=p.data;requireUI(d?.Schema===2&&Array.isArray(d.Bank)&&d.Bank.length<=1000&&Array.isArray(d.History)&&d.History.length<=100&&Array.isArray(d.Templates)&&d.Templates.length<=100&&d.Settings&&Array.isArray(d.Sets)&&d.Sets.length<=100,'Niepoprawny stan V2.');const freshScores=p.revision>lastScoresRevision?rankingFromAggregate(d.Scores):null;lastDataRevision=p.revision;quizData=d;snapshots=Array.isArray(p.snapshots)?p.snapshots.slice(0,5):[];lastDataAt=Date.now();if(freshScores){lastScoresRevision=p.revision;allScores=freshScores;renderRanking();rankingRefreshed(p.revision);}renderBank();renderSets();renderTeams();renderHistory();renderSnapshots();renderSettings();renderDiagnostics();updateArchiveControls();migrateBrowser();return;
  }
- if(p.type==='quiz-download'){requireUI(p.envelope&&['backup','bank'].includes(p.kind),'Błędny eksport.');download(p.kind==='bank'?`LukiQuiz-Szablony-v2-${new Date().toISOString().slice(0,10)}.json`:`LukiQuiz-${p.kind}-v2-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(p.envelope));toast('Eksport gotowy.');return;}
+ if(p.type==='quiz-download'){requireUI(p.envelope&&['backup','bank'].includes(p.kind),'Błędny eksport.');download(p.kind==='bank'?`LukiQuiz-Szablony-v${APP_VERSION}-${new Date().toISOString().slice(0,10)}.json`:`LukiQuiz-${p.kind}-v${APP_VERSION}-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(p.envelope));toast('Eksport gotowy.');return;}
  if(p.type==='quiz-preview'){if(!pendingImport||pendingImport.kind!==p.kind)return;pendingImport.validated=true;$('import-preview').textContent=`Schema 1 - ${p.kind==='bank'?'Szablony':p.kind}\nPytania: ${p.questions}\nZestawy: ${p.sets}\nRanking: ${p.users??'bez zmian'}\nHistoria: ${p.history??'bez zmian'}`;$('confirm-import').disabled=false;return;}
- if(p.type==='quiz-diagnostics'){requireUI(p.stateSchema===2,'Nieobsługiwany schemat danych, jesli pojawil ci sie ten blad to pocwicz aima');diagnostics=p;renderDiagnostics();}
+ if(p.type==='quiz-diagnostics'){requireUI(p.stateSchema===2,'Nieobsługiwany schemat danych, jesli pojawil ci sie ten blad to pocwicz aima');diagnostics=p;renderDiagnostics();updateArchiveControls();}
 }
 function voteWord(n){n=Math.max(0,Number(n)||0);if(n===1)return 'głos';const mod10=n%10,mod100=n%100;if(mod10>=2&&mod10<=4&&!(mod100>=12&&mod100<=14))return 'głosy';return 'głosów';}
 function statusMeta(status,mode){if(status==='open')return{label:mode==='POLL'?'Ankieta otwarta':'Głosowanie otwarte',cls:'open'};if(status==='locked')return{label:mode==='POLL'?'Ankieta zamknięta':'Głosowanie zamknięte',cls:'locked'};if(status==='revealed')return{label:mode==='POLL'?'Wyniki ankiety':'Wynik ujawniony',cls:'revealed'};if(status==='cancelled')return{label:'Runda anulowana',cls:'cancelled'};return{label:'Brak aktywnej rundy',cls:'idle'};}
@@ -717,26 +872,30 @@ let diagnostics=null,diagnosticTimeout=null;
 
 function renderDiagnostics() {
   const items = [
-    ['Serwer HTTP',
+    ['Adres strony HTTP',
       isTrustedPageOrigin() ? 'PASS' : 'FAIL',
-      location.host],
+      location.host + ' - adres otwarcia strony. Zakres nasłuchu HTTP nie jest sprawdzany.'],
 
     ['WebSocket',
       connection?.authenticated ? 'PASS' : 'WARNING',
       connection?.authenticated
-        ? 'Połączenie lokalne aktywne'
+        ? 'Authentication potwierdzone: ' + connection.url + '. Zakres nasłuchu WebSocket nie jest sprawdzany.'
         : 'Brak potwierdzonego połączenia'],
 
-    ['Zabezpieczenia połączenia',
-      connection?.enforce ? 'PASS' : 'WARNING',
-      connection?.enforce
-        ? 'Uwierzytelnianie aktywne'
-        : 'Zabezpieczenia niepotwierdzone'],
+    ['Enforce - sonda bez hasła',
+      connection?.authenticated && connection.enforce === true ? 'PASS' : connection?.enforce === false ? 'FAIL' : 'UNKNOWN',
+      connection?.authenticated && connection.enforce === true
+        ? 'Serwer odrzucił żądanie sondy z błędem uwierzytelnienia.'
+        : connection?.enforce === false
+          ? 'Sonda przyjęła żądanie bez hasła lub nie otrzymała wyzwania Authentication.'
+          : connection?.authenticated
+            ? 'Nie udało się jednoznacznie potwierdzić Enforce automatycznie. Wynik nie oznacza błędnej konfiguracji. Sprawdź, czy Enforce jest włączone w ustawieniach WebSocket Server.'
+            : 'Test Enforce nie został zakończony. Połącz panel, aby uruchomić sondę.'],
 
     ['Status silnika',
       publicState?.appVersion === APP_VERSION ? 'PASS' : 'WARNING',
       publicState?.appVersion === APP_VERSION
-        ? 'Silnik działa prawidłowo'
+        ? 'Otrzymano stan z wersją ' + APP_VERSION
         : publicState?.appVersion
           ? 'Niezgodna wersja silnika'
           : 'Brak odpowiedzi silnika'],
@@ -748,7 +907,7 @@ function renderDiagnostics() {
         : 'Niepotwierdzony format danych'],
 
     ['Migracja',
-      quizData ? 'PASS' : 'WARNING',
+      quizData?.Migration ? 'PASS' : 'WARNING',
       quizData?.Migration
         ? String(quizData.Migration)
             .replace('v1 -> schema 2 verified',
@@ -762,27 +921,29 @@ function renderDiagnostics() {
       quizData ? 'PASS' : 'WARNING',
       `${allScores.length} osób`],
 
-    ['Zgodność komponentów',
+    ['Identyfikator buildu',
       diagnostics?.build === UI_BUILD ? 'PASS' : 'WARNING',
       diagnostics?.build === UI_BUILD
-        ? 'Panel i silnik są zgodne'
+        ? 'Otrzymano identyfikator ' + UI_BUILD
         : diagnostics
           ? 'Niezgodne wersje komponentów'
           : 'Uruchom test instalacji'],
 
-    ['Wersja silnika',
+    ['Identyfikator poprawki',
       diagnostics?.enginePatch === CLIENT_PATCH ? 'PASS' : 'WARNING',
       diagnostics?.enginePatch === CLIENT_PATCH
-        ? 'Kod C# jest aktualny'
+        ? 'Otrzymano identyfikator ' + CLIENT_PATCH
         : diagnostics
           ? 'Kod C# wymaga sprawdzenia'
           : 'Uruchom test instalacji'],
 
     ['Test działania silnika',
-      diagnostics ? 'PASS' : 'WARNING',
-      diagnostics
-        ? 'Otrzymano odpowiedź diagnostyczną'
-        : 'Uruchom test instalacji'],
+      diagnostics?.autoFinalizeError ? 'FAIL' : diagnostics ? 'PASS' : 'WARNING',
+      diagnostics?.autoFinalizeError
+        ? String(diagnostics.autoFinalizeError)
+        : diagnostics
+          ? 'Otrzymano odpowiedź diagnostyczną silnika. Pełna konfiguracja serwerów nie jest sprawdzana.'
+          : 'Uruchom test instalacji'],
 
     ['Integracja Twitch i OBS',
       'WARNING',
@@ -794,7 +955,8 @@ function renderDiagnostics() {
   const statusNames = {
     PASS: 'OK',
     FAIL: 'BŁĄD',
-    WARNING: 'UWAGA'
+    WARNING: 'UWAGA',
+    UNKNOWN: 'INFO'
   };
 
   for (const [name, status, detail] of items) {
@@ -847,7 +1009,8 @@ $('reset-scores').onclick=()=>{$('reset-confirmation').value='';$('reset-error')
 function submitScoreReset(){
  try{
   requireUI($('reset-confirmation').value.trim().toUpperCase()==='RESET','Wpisz RESET, aby potwierdzić wyzerowanie punktacji.');
-  requireUI(![...connection.pending.values()].some(x=>x.op==='resetscores'),'Reset został już wysłany. Poczekaj na jego wynik i odśwież ranking.');
+  requireUI(connection.rankingArchiveReady,RANKING_ARCHIVE_REQUIRED_MESSAGE);
+  requireUI(![...connection.pending.values()].some(x=>x.op==='resetscores'&&!x.timedOut),'Reset został już wysłany. Poczekaj na jego wynik i odśwież ranking.');
   requireUI(action('resetscores',{confirmText:'RESET',lqeMutation:'reset',lqeConfirm:'RESET'}),'Nie można wysłać resetu. Połącz panel i poczekaj na zgodność wersji silnika.');
   $('reset-dialog').close();toast('Wysłano reset punktacji - czekam na potwierdzenie silnika…');
  }catch(e){$('reset-error').textContent=e.message;$('reset-error').hidden=false;}
@@ -861,12 +1024,12 @@ function legacyQuestion(v,id){const q=newQuestion();q.Id=id||uid();q.Text=String
 function migrateBrowser(){if(!quizData||quizData.BrowserMigrated||browserMigrationSent)return;try{const raw=localStorage.getItem('localQuiz.templates.v1')||'[]',draftRaw=localStorage.getItem('localQuiz.draft')||'null';requireUI(raw.length<1024*1024&&draftRaw.length<30000,'Stare dane przeglądarki przekraczają limit.');const old=JSON.parse(raw);requireUI(Array.isArray(old)&&old.length<=100,'Błędne szablony v1.');const Templates=old.map(t=>{const q=legacyQuestion(t.data,t.id);q.Name=String(t.name??'').slice(0,80);validateQuestion(q);return q;});const v=JSON.parse(draftRaw),Draft=v?legacyQuestion(v):null;if(Draft)validateQuestion(Draft,true);browserMigrationSent=true;sendJson('migratebrowser',{Templates,Draft});if(Draft&&!localStorage.getItem('localQuiz.draft.v2'))loadEditor(Draft);}catch(e){toast('Migracja starych szablonów do Szablonów zatrzymana: '+e.message+'. Stare dane pozostały nietknięte.');}}
 $('connect').onclick=()=>{browserMigrationSent=false;connection.connect($('ws-url').value,$('ws-password').value);try{localStorage.setItem('localQuiz.wsUrl',normalizeWebSocketUrl($('ws-url').value));}catch{}};
 $('ws-password').addEventListener('keydown',e=>{if(e.key==='Enter')$('connect').click();});
-async function copyOverlayUrl(){try{requireUI(connection.authenticated,'Najpierw połącz panel.');const url=new URL('overlay.html',location.href);url.searchParams.set('v',UI_BUILD+'-'+CLIENT_PATCH+'-classic1');url.hash=new URLSearchParams({password:connection.password,ws:connection.url}).toString();await navigator.clipboard.writeText(url.href);toast('Skopiowano URL. Wklej go w OBS. Hasło znajduje się po znaku #.');return true;}catch(error){toast(error.message);return false;}}
+async function copyOverlayUrl(){try{requireUI(connection.authenticated,'Najpierw połącz panel.');const url=new URL('overlay.html',location.href);url.searchParams.set('v',APP_VERSION+'-'+UI_BUILD+'-'+CLIENT_PATCH+'-classic1');url.hash=new URLSearchParams({password:connection.password,ws:connection.url}).toString();await navigator.clipboard.writeText(url.href);toast('Skopiowano URL. Wklej go w OBS. Hasło znajduje się po znaku #.');return true;}catch(error){toast(error.message);return false;}}
 $('copy-overlay').onclick=()=>copyOverlayUrl();
 document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action)));
 document.addEventListener('keydown',e=>{if(!quizData?.Settings.Shortcuts||e.repeat||e.isComposing||e.metaKey||document.querySelector('dialog[open]')||e.target.closest('input,textarea,select,[contenteditable="true"]'))return;const k=Object.entries(quizData.Settings.Keys).find(([,v])=>v&&v===keyChord(e));if(!k)return;e.preventDefault();try{const op=k[0];if(op==='start')start();else if(op==='lock'){if(currentRound&&['open','locked'].includes(currentRound.Status))action(currentRound.Status==='locked'?'reopen':'lock');}else if(op==='reveal')revealDialog();else if(op==='cancel')$('cancel-round').click();else if(op==='pause')action(currentRound?.Paused?'resume':'pause');else if(op==='addtime'||op==='subtracttime')action('time',{seconds:op==='addtime'?10:-10});else if(op==='visibility')action(publicState?.visible?'hide':'show');else action(op);}catch(err){toast(err.message);}});
 try{const raw=localStorage.getItem('localQuiz.draft.v2');requireUI(!raw||raw.length<=30000,'Zbyt duży szkic.');const q=raw?JSON.parse(raw):newQuestion();validateQuestion(q,true);loadEditor(q);const url=localStorage.getItem('localQuiz.wsUrl');if(url)$('ws-url').value=normalizeWebSocketUrl(url);}catch{loadEditor(newQuestion());}
-setInterval(updateTimer,250);setInterval(()=>{if(connection.authenticated){connection.sync();if(currentTab==='ranking')action('getscores');}},3000);window.addEventListener('beforeunload',()=>connection.close());renderDiagnostics();
+setInterval(updateTimer,250);setInterval(()=>{if(connection.authenticated){connection.sync();if(currentTab==='ranking')action('getscores');}},3000);window.addEventListener('beforeunload',()=>connection.close());renderDiagnostics();updateArchiveControls();
       function decodeRankingCsv(bytes) {
         if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
           return new TextDecoder('utf-8', {fatal:true}).decode(bytes);
