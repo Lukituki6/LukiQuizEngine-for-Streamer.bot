@@ -7,6 +7,8 @@
 
 **Aktualne wydanie: v2.0.2 BETA**
 
+- [READMElegacy.md](1.3.0/READMElegacy.md) - archiwalna dokumentacja starszej wersji **LukiQuizEngine v1.3.0**, dostępna w folderze [1.3.0](1.3.0/). Zawiera oryginalną instrukcję instalacji, konfiguracji i obsługi. Informacje oraz przykłady kodu dotyczą wersji 1.3.0 i nie powinny być stosowane bezpośrednio w aktualnej wersji 2.0.2 BETA.
+
 Lokalny silnik quizowy dla Streamer.bot z panelem WWW, overlayem OBS, głosowaniem na czacie Twitch, historią rund i trwałym rankingiem. Wystarczy jedna Action C# i jeden trigger wiadomości Twitch. Nie potrzebujesz Node.js, Pythona, osobnego programu `.exe`, bazy danych ani zewnętrznego hostingu.
 
 > [!IMPORTANT]
