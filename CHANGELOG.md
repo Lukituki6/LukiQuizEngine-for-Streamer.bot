@@ -1,5 +1,16 @@
 # Historia zmian - LukiQuizEngine
 
+## 2.0.1 BETA - mała aktualizacja QoL
+
+### Mała zmiana QoL
+
+- Dodano opcję widoku panelu **"Prosty"**, który przypomina mniej więcej widok z wersji 1.3.0 zachowując kluczowe zmiany z 2.0.0
+- Oraz **"Advanced"**, który przedstawia wszystkie funkcje 
+
+### Migracja z wersji 2.0.0 BETA
+
+Jeśli zainstalowana była już wersja 2.0.0 BETA to najszybciej jest podmienić po prostu plik w folderze zmapowanym pod bota: **panel.html** 
+
 ## 2.0.0 BETA - duża aktualizacja
 
 Wersja 2.0.0 przebudowuje quiz praktycznie od podstaw. Nadal wystarczy Streamer.bot, jedna Action z kodem C#, jeden trigger wiadomości Twitcha oraz lokalny panel i overlay HTML. Nie trzeba instalować osobnej aplikacji, Node.js ani zewnętrznej bazy danych.
