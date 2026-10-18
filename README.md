@@ -716,9 +716,54 @@ Warto okresowo:
 - wykonywać kopię zapasową danych Streamer.bot;
 - przechowywać kopie poza folderem publicznego repozytorium.
 
-## Bezpieczeństwo
+# Bezpieczeństwo
 
-### Co zabezpiecza v1.3.0
+## Bezpieczeństwo i ograniczenia
+
+LukiQuizEngine jest przeznaczony do lokalnego działania ze Streamer.bot.
+
+**Zalecana konfiguracja:**
+
+- HTTP Server: `127.0.0.1:7474`
+- WebSocket Server: `127.0.0.1:8080`
+- WebSocket Authentication: `ON`
+- WebSocket Enforce: `ON`
+- Silne, indywidualne hasło WebSocket
+- Brak przekierowania portów HTTP i WebSocket do internetu
+- Brak publicznych tuneli i proxy udostępniających lokalne API
+
+### Znane ograniczenie bezpieczeństwa - HTTP API Streamer.bot
+
+Wbudowany serwer HTTP Streamer.bot udostępnia endpoint `/DoAction`, który umożliwia wywoływanie akcji i przekazywanie im argumentów.
+
+Uwierzytelnianie WebSocket nie stanowi automatycznie zabezpieczenia tego osobnego interfejsu HTTP.
+
+W aktualnej architekturze LukiQuizEngine nie posiada niezależnego mechanizmu autoryzacji dla wszystkich alternatywnych sposobów wywoływania akcji.
+
+Osoba lub program posiadający dostęp do HTTP API może potencjalnie wywołać operacje administracyjne quizu, a także inne akcje skonfigurowane w Streamer.bot.
+
+**Dlatego należy bezwzględnie ograniczyć serwer HTTP do `127.0.0.1` i nie udostępniać go niezaufanym urządzeniom ani usługom.**
+
+Konfiguracja lokalna znacząco ogranicza możliwość dostępu z sieci, ale nie stanowi ochrony przed nieufnym oprogramowaniem uruchomionym na tym samym komputerze.
+
+### Bezpieczeństwo overlayu
+
+Pełny adres overlayu może zawierać dane uwierzytelniające WebSocket.
+
+Nie udostępniaj publicznie pełnego adresu overlayu ani jego konfiguracji.
+
+W przypadku ujawnienia hasła należy je zmienić.
+
+### Odpowiedzialność użytkownika
+
+Projekt nie powinien być udostępniany przez publiczny serwer HTTP bez dodatkowych, odpowiednio zweryfikowanych zabezpieczeń.
+
+Zalecane korzystanie z aktualnej wersji Streamer.bot i regularne wykonywanie kopii bezpieczeństwa danych.
+
+To ograniczenie dotyczy również ogólnego bezpieczeństwa konfiguracji Streamer.bot, a nie wyłącznie LukiQuizEngine.
+
+
+## Co zabezpiecza v1.3.0
 
 - Oficjalne uwierzytelnianie WebSocket challenge + salt + SHA-256.
 - Wymagane jednocześnie `Authentication` i `Enforce`.
@@ -936,50 +981,6 @@ z czatu wymagają działającej integracji Twitch.
 - [Konfiguracja HTTP Server](https://docs.streamer.bot/api/http/guide/configuration)
 - [C# w Streamer.bot: Find Refs i Compile](https://docs.streamer.bot/api/csharp/guide/intro)
 - [Trigger Twitch Chat Message](https://docs.streamer.bot/api/triggers/twitch/chat/message)
-
-## Bezpieczeństwo i ograniczenia
-
-LukiQuizEngine jest przeznaczony do lokalnego działania ze Streamer.bot.
-
-**Zalecana konfiguracja:**
-
-- HTTP Server: `127.0.0.1:7474`
-- WebSocket Server: `127.0.0.1:8080`
-- WebSocket Authentication: `ON`
-- WebSocket Enforce: `ON`
-- Silne, indywidualne hasło WebSocket
-- Brak przekierowania portów HTTP i WebSocket do internetu
-- Brak publicznych tuneli i proxy udostępniających lokalne API
-
-### Znane ograniczenie bezpieczeństwa - HTTP API Streamer.bot
-
-Wbudowany serwer HTTP Streamer.bot udostępnia endpoint `/DoAction`, który umożliwia wywoływanie akcji i przekazywanie im argumentów.
-
-Uwierzytelnianie WebSocket nie stanowi automatycznie zabezpieczenia tego osobnego interfejsu HTTP.
-
-W aktualnej architekturze LukiQuizEngine nie posiada niezależnego mechanizmu autoryzacji dla wszystkich alternatywnych sposobów wywoływania akcji.
-
-Osoba lub program posiadający dostęp do HTTP API może potencjalnie wywołać operacje administracyjne quizu, a także inne akcje skonfigurowane w Streamer.bot.
-
-**Dlatego należy bezwzględnie ograniczyć serwer HTTP do `127.0.0.1` i nie udostępniać go niezaufanym urządzeniom ani usługom.**
-
-Konfiguracja lokalna znacząco ogranicza możliwość dostępu z sieci, ale nie stanowi ochrony przed nieufnym oprogramowaniem uruchomionym na tym samym komputerze.
-
-### Bezpieczeństwo overlayu
-
-Pełny adres overlayu może zawierać dane uwierzytelniające WebSocket.
-
-Nie udostępniaj publicznie pełnego adresu overlayu ani jego konfiguracji.
-
-W przypadku ujawnienia hasła należy je zmienić.
-
-### Odpowiedzialność użytkownika
-
-Projekt nie powinien być udostępniany przez publiczny serwer HTTP bez dodatkowych, odpowiednio zweryfikowanych zabezpieczeń.
-
-Zalecane korzystanie z aktualnej wersji Streamer.bot i regularne wykonywanie kopii bezpieczeństwa danych.
-
-To ograniczenie dotyczy również ogólnego bezpieczeństwa konfiguracji Streamer.bot, a nie wyłącznie LukiQuizEngine.
 
 ## Licencja
 
