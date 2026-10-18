@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src ws://127.0.0.1:* ws://localhost:*; img-src data:; font-src data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>LukiQuizEngine - Overlay 2.0.0 BETA</title>
+  <title>LukiQuizEngine - Overlay 2.0.2 BETA</title>
   <style>
     :root {
       --bg: rgba(10, 12, 21, 0.94);
@@ -120,9 +120,9 @@
   <div id="connection-warning" class="connection-warning">Brak połączenia ze Streamer.bot</div>
   <script>(() => {
 'use strict';
-const UI_BUILD='FC1', CLIENT_PATCH='STYLE4';
+const UI_BUILD='PHoeniX', CLIENT_PATCH='QUPA';
 const RANKING_MUTATIONS=new Set(['setscore','resetscores','importscores','restoreimportbackup','restorebackup','restoresnapshot','reveal','rescore','undo']);
-const APP_VERSION='2.0.0',ACTION_NAME='QUIZ - Silnik',MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
+const APP_VERSION='2.0.2',ACTION_NAME='QUIZ - Silnik',MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
 const LOOPBACK_HOSTS=new Set(['127.0.0.1','localhost']);
 const $=id=>document.getElementById(id);
 const overlayRoot=$('quiz-root'),questionEl=$('question'),answersEl=$('answers'),statusEl=$('status-pill'),timerEl=$('timer'),hintEl=$('hint'),voteCountEl=$('vote-count'),leadersEl=$('leaders'),emptyRankingEl=$('empty-ranking'),warningEl=$('connection-warning'),teamScoresEl=$('team-scores'),shell=$('shell'),podiumCard=$('podium-card'),podiumWinners=$('podium-winners'),topLabel=$('top-label');
@@ -191,29 +191,27 @@ async function verifyEnforce(rawUrl, authenticatedSocket, timeoutMs = 3500) {
       }
       if (sent && p.id === id) {
         if (p.status === 'ok') finish(false);
-        else if (p.status === 'error' && /auth/i.test(String(p.error || p.message || ''))) finish(true);
+        else if (p.status === 'error' && /^(?:authentication (?:is )?required|not authenticated)[.!]?$/i.test(String(p.error || p.message || '').trim())) finish(true);
         else finish(null, 'nierozpoznana odpowiedź sondy');
       }
     });
     socket.addEventListener('close', event => {
-      const rejected = sent && event.wasClean && [1000,1005,1008,4009].includes(event.code);
-      finish(rejected ? true : null, 'sonda close=' + event.code + ', clean=' + event.wasClean);
+      finish(null, 'sonda close=' + event.code + ', clean=' + event.wasClean);
     });
     socket.addEventListener('error', () => finish(null, 'błąd transportu sondy'));
   });
-  if (result.enforced === null) throw Error('Nie można potwierdzić Enforce: ' + result.detail + '. Hasło zostało zaakceptowane.');
-  if (!result.enforced) return false;
+  if (result.enforced === false) return false;
   await authenticatedInfo(authenticatedSocket, timeoutMs);
-  return true;
+  return result.enforced;
 }
 
 function showWarning(text){warningEl.textContent=String(text||'Brak bezpiecznego połączenia').slice(0,220);warningEl.classList.add('show');}
-function hideWarning(){warningEl.classList.remove('show');}
+function hideWarning(){if(connection?.authenticated&&connection.enforce===null){showWarning('Authentication potwierdzone. Enforce niepotwierdzone - sprawdź ustawienia serwera.');return;}warningEl.classList.remove('show');}
 
 class QuizConnection {
- constructor(onData,onStatus,bootstrap=['sync','getscores','getdata']){this.onData=onData;this.onStatus=onStatus;this.bootstrap=bootstrap;this.socket=null;this.password='';this.url='';this.authenticated=false;this.generation=0;this.counter=0;this.reconnect=true;this.authId='';this.subId='';this.enforce=false;this.timer=null;this.engineReady=false;this.pending=new Map();this.readRetryTimers=new Set();}
+ constructor(onData,onStatus,bootstrap=['sync','getscores','getdata']){this.onData=onData;this.onStatus=onStatus;this.bootstrap=bootstrap;this.socket=null;this.password='';this.url='';this.authenticated=false;this.generation=0;this.counter=0;this.reconnect=true;this.authId='';this.subId='';this.enforce=null;this.timer=null;this.engineReady=false;this.pending=new Map();this.readRetryTimers=new Set();}
  async connect(url,password){
-  const generation=++this.generation;this.engineReady=false;this.failPending('Połączenie zmienione - wynik operacji niepotwierdzony.');clearTimeout(this.timer);if(this.socket)this.socket.close();this.socket=null;this.authenticated=false;this.subId='';this.enforce=false;
+  const generation=++this.generation;this.engineReady=false;this.failPending('Połączenie zmienione - wynik operacji niepotwierdzony.');clearTimeout(this.timer);if(this.socket)this.socket.close();this.socket=null;this.authenticated=false;this.subId='';this.enforce=null;
   try{if(!isTrustedPageOrigin())throw Error('Otwórz stronę przez lokalny HTTP Server (127.0.0.1).');this.url=normalizeWebSocketUrl(url);if(typeof password!=='string'||password.length<12||password.length>256)throw Error('Hasło: 12-256 znaków.');this.password=password;this.reconnect=true;
    const socket=new WebSocket(this.url);this.socket=socket;this.onStatus('Łączenie i uwierzytelnianie…',false);
    socket.addEventListener('message',async event=>{
@@ -230,13 +228,13 @@ class QuizConnection {
       if(p.status!=='ok')throw Error('Błędne hasło WebSocket.');
       const enforce=await verifyEnforce(this.url,socket);
       if(this.socket!==socket||generation!==this.generation)return;
-      if(enforce!==true)throw Error(enforce===false?'Enforce jest wyłączone.':'Nie można potwierdzić Enforce.');
-      this.enforce=true;this.subId='quiz-sub-'+generation+'-'+(++this.counter);this.onStatus('Authentication + Enforce OK - subskrypcja General.Custom…',false);
+      this.enforce=enforce;if(enforce===false)throw Error('Sonda przyjęła żądanie bez hasła. Sprawdź Authentication i Enforce.');
+      this.subId='quiz-sub-'+generation+'-'+(++this.counter);this.onStatus(enforce===true?'Authentication + Enforce OK - subskrypcja General.Custom…':'Authentication potwierdzone, Enforce niepotwierdzone - subskrypcja.',false);
       socket.send(JSON.stringify({request:'Subscribe',id:this.subId,events:{General:['Custom']}}));return;
      }
      if(p.id===this.subId){
       if(p.status!=='ok')throw Error('Nie udało się zasubskrybować General.Custom.');
-      this.authenticated=true;this.onStatus('Authentication + Enforce OK - sprawdzam wersję silnika…',false);this.action('diagnostics');return;
+      this.authenticated=true;this.onStatus(this.enforce===true?'Authentication + Enforce OK - sprawdzam wersję silnika…':'Authentication potwierdzone, Enforce niepotwierdzone - sprawdzam silnik.',false);this.action('diagnostics');return;
      }
      if(!this.authenticated)return;
      if(p.id&&this.pending.has(p.id)&&p.status==='error'){const job=this.pending.get(p.id);clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.id);this.onData({type:job.read?'quiz-read-error':'quiz-error',requestId:p.id,operation:job.op,message:'Streamer.bot odrzucił żądanie. Sprawdź nazwę i stan Action QUIZ - Silnik.'});return;}
@@ -264,7 +262,7 @@ class QuizConnection {
   if(p.type==='quiz-diagnostics'){
    if(!this.pending.has(p.requestId)){if(!this.engineReady&&p.build!==UI_BUILD)this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień C# i odśwież pliki.`,false);return;}
    if(p.build!==UI_BUILD||p.protocol!==1){this.engineReady=false;this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień kod C# i odśwież pliki.`,false);this.onData(p);return;}
-   if(!this.engineReady){this.engineReady=true;this.onStatus('PASS - Authentication + Enforce - '+UI_BUILD+' - '+CLIENT_PATCH,true);for(const op of this.bootstrap)this.action(op);}
+   if(!this.engineReady){this.engineReady=true;this.onStatus(this.enforce===true?'PASS - Authentication + Enforce - '+UI_BUILD+' - '+CLIENT_PATCH:'Authentication potwierdzone. Enforce niepotwierdzone - sprawdź ustawienia serwera.',true);for(const op of this.bootstrap)this.action(op);}
   }
   const payloadJob=this.pending.get(p.requestId);
   if(payloadJob?.read&&p.build===UI_BUILD&&p.operation===payloadJob.op&&Number.isSafeInteger(p.revision)&&this.readPayloadMatches(payloadJob.op,p)){
