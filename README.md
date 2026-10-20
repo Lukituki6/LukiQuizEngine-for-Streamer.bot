@@ -71,16 +71,16 @@ Lokalny silnik quizowy dla Streamer.bot z panelem WWW, overlayem OBS, głosowani
 
 Wymagany jest Windows ze Streamer.bot obsługującym `Execute C# Code`, `HTTP Server` i `WebSocket Server`, aktualna przeglądarka oraz połączone konto Twitch, jeśli chcesz zbierać głosy z czatu. OBS jest potrzebny do wyświetlania overlayu na transmisji, nie do samego działania panelu.
 
-Kod był analizowany pod kątem zgodności ze środowiskiem Streamer.bot **1.0.7**, ale nie deklarujemy pełnej kompatybilności ze wszystkimi wersjami hosta. Wykonaj własny test instalacji.
+Kod był analizowany pod kątem zgodności ze środowiskiem Streamer.bot **1.0.7**, ale nie deklaruje pełnej kompatybilności ze wszystkimi wersjami hosta.
 
 ## Instalacja od zera
 
 ### 1. Pobierz odpowiednią paczkę
 
-Pobierz paczkę **LukiQuizEngine v2.0.2 BETA** z odpowiedniego wydania w sekcji Releases, gdy zostanie opublikowana. Rozpakuj ją do stałego folderu, np.:
+Pobierz paczkę **LukiQuizEngine** z odpowiedniego wydania w sekcji Releases, gdy zostanie opublikowana. Rozpakuj ją do stałego folderu, np.:
 
 ```text
-C:\StreamerBot\LukiQuizEngine-v2.0.2
+C:\StreamerBot\LukiQuizEngine
 ```
 
 Nie mieszaj plików `panel.html`, `overlay.html` i `QuizEngine.cs` z różnych buildów. Wszystkie trzy muszą odpowiadać temu samemu wydaniu.
@@ -109,7 +109,7 @@ Enforce:        ON
 Password:       własne, silne i unikalne hasło
 ```
 
-Zapisz ustawienia i uruchom serwer. Jeśli był uruchomiony podczas zmian, uruchom go ponownie. Nie wpisuj hasła w plikach projektu ani na GitHubie.
+Zapisz ustawienia i uruchom serwer. Jeśli był uruchomiony podczas zmian, uruchom go ponownie.
 
 ### 4. Skonfiguruj HTTP Server
 
@@ -124,10 +124,10 @@ Dodaj mapowanie:
 
 ```text
 Path:   quiz
-Folder: C:\StreamerBot\LukiQuizEngine-v2.0.2
+Folder: C:\StreamerBot\LukiQuizEngine
 ```
 
-Folder musi wskazywać rzeczywistą lokalizację plików HTML. Uruchom HTTP Server. **Nie zmieniaj hosta na `0.0.0.0` i nie udostępniaj serwera przez LAN, tunel ani internet.** Wyjaśnienie znajduje się w sekcji bezpieczeństwa.
+Folder musi wskazywać rzeczywistą lokalizację plików. Uruchom HTTP Server. **Nie zmieniaj hosta na `0.0.0.0` i nie udostępniaj serwera przez LAN, tunel ani internet.** Wyjaśnienie znajduje się w sekcji bezpieczeństwa.
 
 ### 5. Połącz panel
 
@@ -143,7 +143,7 @@ Możesz też skorzystać z `OTWORZ_PANEL.url`. Wpisz hasło WebSocket, kliknij *
 
 Po prawidłowym połączeniu panelu użyj **Skopiuj URL overlayu**. W OBS dodaj źródło **Browser / Przeglądarka**, wklej cały skopiowany URL i ustaw rozmiar `1920 × 1080`.
 
-Nie korzystaj z adresu demonstracyjnego `?demo=1` podczas prawdziwej transmisji. Pełny URL zawiera poświadczenie WebSocket we fragmencie po `#` - **traktuj go jak hasło**.
+Nie korzystaj z adresu demonstracyjnego `?demo=1` podczas prawdziwej transmisji. Pełny URL zawiera haslo WebSocket we fragmencie po `#`
 
 Podgląd demonstracyjny:
 
@@ -160,7 +160,6 @@ http://127.0.0.1:7474/quiz/overlay.html?demo=1
 5. Sprawdź komendy `!punkty` i `!ranking`.
 6. Przeprowadź oddzielną rundę z timerem oraz `AutoReveal`.
 7. Sprawdź ręczny zapis rankingu, listę archiwów i eksport CSV.
-8. Operacje resetu i przywrócenia testuj wyłącznie na **danych testowych**, nie na prawdziwym rankingu widzów.
 
 ## Tryby panelu
 
@@ -179,8 +178,6 @@ Oba tryby korzystają z tego samego silnika i tych samych danych. Funkcje archiw
 | `!punkty` | Sprawdzenie własnego wyniku |
 | `!ranking` | Wyświetlenie rankingu na czacie |
 | `!quiz ...` | Polecenia moderatorskie obsługiwane przez silnik |
-
-Domyślnie komenda głosu musi być samodzielna, np. `!3`. Ciąg `!3 siema` nie jest standardowo rozpoznawany jako głos. Starsza, opcjonalna modyfikacja wyrażenia regularnego dla dodatkowego tekstu została opisana w historii projektu. **Nie stosuj automatycznie modyfikacji kodu przygotowanych dla v1.3.0 do silnika v2.0.2 bez osobnego sprawdzenia zgodności.**
 
 Komendy administracyjne czatu podlegają uprawnieniom nadawcy i moderatorów. Automatyczne komunikaty o wydarzeniach rundy są domyślnie wyłączone (`AnnounceRoundEventsInChat = false` w `QuizEngine.cs`).
 
@@ -213,8 +210,6 @@ Jeśli panel zgłasza **niepotwierdzony wynik** resetu lub przywrócenia, nie kl
 ### Integralność i limity
 
 Nowo tworzone archiwa posiadają pole `ContentHash` służące do wykrywania uszkodzeń treści. Dla zgodności mogą być odczytywane również starsze archiwa bez tego pola. Zwykły SHA-256 **nie jest podpisem cyfrowym** i nie zabezpiecza przed osobą mogącą celowo modyfikować pliki.
-
-System nie usuwa automatycznie wszystkich starych archiwów po określonym czasie. Okresowo sprawdzaj miejsce na dysku i wykonuj osobne kopie ważnych danych.
 
 ## Gdzie są przechowywane dane
 
