@@ -5,14 +5,14 @@
 
 # LukiQuizEngine for Streamer.bot
 
-**Aktualne wydanie: v2.0.2 BETA**
+**Aktualne wydanie: v2.1.0 BETA**
 
-- [READMElegacy.md](1.3.0/READMElegacy.md) - archiwalna dokumentacja starszej wersji **LukiQuizEngine v1.3.0**, dostępna w folderze [1.3.0](1.3.0/). Zawiera oryginalną instrukcję instalacji, konfiguracji i obsługi. Informacje oraz przykłady kodu dotyczą wersji 1.3.0 i nie powinny być stosowane bezpośrednio w aktualnej wersji 2.0.2 BETA.
+- [READMElegacy.md](1.3.0/READMElegacy.md) - archiwalna dokumentacja starszej wersji **LukiQuizEngine v1.3.0**, dostępna w folderze [1.3.0](1.3.0/). Zawiera oryginalną instrukcję instalacji, konfiguracji i obsługi. Informacje oraz przykłady kodu dotyczą wersji 1.3.0 i nie powinny być stosowane bezpośrednio w aktualnej wersji 2.1.0 BETA.
 
 Lokalny silnik quizowy dla Streamer.bot z panelem WWW, overlayem OBS, głosowaniem na czacie Twitch, historią rund i trwałym rankingiem. Wystarczy jedna Action C# i jeden trigger wiadomości Twitch. Nie potrzebujesz Node.js, Pythona, osobnego programu `.exe`, bazy danych ani zewnętrznego hostingu.
 
 > [!IMPORTANT]
-> Wersja **2.0.2 BETA** jest przeznaczona do testowania w lokalnym środowisku. Przed użyciem na transmisji zrób kopię danych i przetestuj instalację. Znane ograniczenie bezpieczeństwa HTTP `/DoAction` jest opisane w sekcji [Bezpieczeństwo i znane ograniczenia](#bezpieczeństwo-i-znane-ograniczenia).
+> Wersja **2.1.0 BETA** jest przeznaczona do testowania w lokalnym środowisku. Przed użyciem na transmisji zrób kopię danych i przetestuj instalację. Znane ograniczenie bezpieczeństwa HTTP `/DoAction` jest opisane w sekcji [Bezpieczeństwo i znane ograniczenia](#bezpieczeństwo-i-znane-ograniczenia).
 
 ## Spis treści
 
@@ -163,12 +163,15 @@ http://127.0.0.1:7474/quiz/overlay.html?demo=1
 
 ## Tryby panelu
 
-Panel obsługuje dwa tryby interfejsu:
+Panel LukiQuizEngine 2.1.0 BETA oferuje trzy tryby interfejsu:
 
-- **PROSTY** - najważniejsze funkcje quizu, pytań, zestawów, rankingu, historii i pomocy.
-- **ADVANCED** - pozostałe ustawienia i zaawansowane opcje obsługi.
+- **PROSTY** - podstawowe funkcje obsługi quizu, w tym pytania, rundy, szablony, ranking, historia i pomoc.
+- **ADVANCED** - pełny dostęp do ustawień, zaawansowanych narzędzi, zarządzania danymi i symulatora.
+- **LEGACY** - interfejs inspirowany wersją 1.3.0, łączący jej charakterystyczny wygląd z wybranymi możliwościami silnika V2.
 
-Oba tryby korzystają z tego samego silnika i tych samych danych. Funkcje archiwizacji rankingów są dostępne w zakładce **Ranking** w obu trybach. Zmiana trybu nie resetuje punktów.
+Wszystkie trzy tryby korzystają z tych samych danych i tego samego silnika quizowego. Zmiana trybu nie resetuje rankingu ani aktywnej konfiguracji.
+
+Panel obsługuje język polski i angielski. Język overlayu może być synchronizowany z panelem lub ustawiany niezależnie.
 
 ## Głosowanie i komendy Twitch
 
