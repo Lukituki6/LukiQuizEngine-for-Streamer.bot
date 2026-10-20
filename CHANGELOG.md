@@ -1,5 +1,117 @@
 # Historia zmian - LukiQuizEngine
 
+## 2.1.0 BETA - Legacy, PL/ENG, ulepszenia interfejsu i nowe narzędzia
+
+Wersja 2.1.0 BETA rozszerza LukiQuizEngine o trzeci tryb panelu, dwujęzyczny interfejs, bardziej czytelne sterowanie quizem, rozbudowaną historię rund, zarządzanie usuwaniem archiwów oraz lokalny symulator.
+
+Aktualizacja zachowuje architekturę V2. Nadal wystarczą Streamer.bot, jedna Action C#, jeden trigger czatu Twitch, lokalny panel WWW i overlay OBS.
+
+### Nowości - wygląd i obsługa panelu
+
+- Dodano trzeci tryb interfejsu `LEGACY`, inspirowany wyglądem LukiQuizEngine 1.3.0.
+- Tryb LEGACY wykorzystuje wspólny silnik V2 i obsługuje nowe funkcje, w tym historię rund oraz archiwa rankingów.
+- Ulepszono wygląd trybów `PROSTY` i `ADVANCED` bez przebudowy istniejącej nawigacji.
+- Wprowadzono bardziej zróżnicowane kolory przycisków zależnie od rodzaju wykonywanej akcji.
+- Poprawiono wizualne wyróżnianie aktywnych elementów, zaznaczeń i stanów interfejsu.
+- Usprawniono czytelność przycisków, sterowania rundą i sekcji panelu.
+- Zachowano możliwość przełączania widoków bez resetowania danych quizu.
+- Wybór trybu panelu może zostać zapamiętany lokalnie przez przeglądarkę.
+
+### Nowości - język polski i angielski
+
+- Dodano obsługę języka polskiego i angielskiego w panelu WWW.
+- Dodano angielskie tłumaczenia interfejsu overlayu OBS.
+- Wprowadzono przełącznik `PL / EN`.
+- Dodano możliwość synchronizacji języka panelu i overlayu.
+- Umożliwiono również niezależne ustawienie języka overlayu.
+- Rozszerzono tłumaczenia komunikatów, przycisków, opisów funkcji oraz elementów dynamicznych.
+
+### Nowości - rozpoznawanie głosów Twitch
+
+Dodano trzy konfigurowalne sposoby rozpoznawania wiadomości zawierających głos.
+
+- `STRICT` - akceptowane są wyłącznie dokładne komendy, np. `!1`.
+- `WHITESPACE` - akceptowane są komendy z dodatkowym tekstem oddzielonym białym znakiem, np. `!1 wiadomość`.
+- `ATTACHED` - akceptowane są również wiadomości bez spacji po numerze, np. `!1wiadomość`.
+
+Zachowano obsługę odpowiedzi od `!1` do `!12`, zależnie od liczby odpowiedzi w pytaniu.
+
+Dodano kontrolę niektórych niewidocznych i nieprawidłowych znaków w wiadomościach, aby ograniczyć błędne interpretowanie głosów.
+
+Domyślnym wariantem pozostaje `STRICT`.
+
+### Nowości - historia rund
+
+- Rozbudowano narzędzia przeszukiwania historii rund.
+- Dodano filtrowanie według treści pytania i widza.
+- Dodano filtrowanie według statusu rundy oraz stanu rozliczenia punktów.
+- Dodano możliwość ograniczania wyników według dat.
+- Dodano opcje sortowania i stronicowania historii.
+- Zachowano dotychczasowe mechanizmy cofania i przeliczania kwalifikujących się wyników.
+
+### Nowości - archiwa rankingów
+
+- Dodano ręczne usuwanie wybranych archiwów rankingów.
+- Dodano podgląd planowanej operacji usuwania przed jej zatwierdzeniem.
+- Wprowadzono wymagane potwierdzenie `USUN ARCHIWA`.
+- Dodano opcjonalne automatyczne czyszczenie starszych archiwów.
+- Umożliwiono skonfigurowanie maksymalnej liczby archiwów oraz maksymalnego wieku zapisów.
+- Dodano osobne opcje uwzględniania archiwów ręcznych i bezpieczeństwa podczas automatycznego czyszczenia.
+- Zachowano mechanizmy ochrony najnowszych kopii i archiwów powiązanych z niedokończonymi operacjami.
+- Przed usunięciem silnik ponownie weryfikuje wybrane pliki.
+- Rozbudowano przeglądanie archiwów o dodatkowe informacje, filtrowanie i sortowanie.
+
+Automatyczne czyszczenie jest domyślnie wyłączone. Nie działa jako niezależna usługa w tle. Jest wywoływane przy określonych operacjach zarządzania rankingiem, takich jak reset i ręczny zapis archiwum.
+
+### Nowości - lokalny symulator quizu
+
+- Dodano symulator dostępny w trybie ADVANCED.
+- Umożliwiono testowanie rund bez przeprowadzania prawdziwego głosowania na Twitchu.
+- Dodano generowanie fikcyjnych widzów oraz symulowanie oddawania i zmieniania głosów.
+- Umożliwiono testowanie zasad głosowania, punktacji i timera.
+- Dodano symulowanie zamykania, ponownego otwierania, anulowania oraz rozliczania rund.
+- Dodano testowanie nowych sposobów rozpoznawania komend głosowania.
+- Symulator korzysta z odrębnych danych przechowywanych w pamięci strony.
+
+Symulator nie zmienia prawdziwego rankingu, historii rund ani archiwów. Nie zastępuje testów integracji ze Streamer.bot, Twitchem i OBS.
+
+### Zgodność i migracja
+
+- Zaktualizowano oznaczenie wersji aplikacji do `2.1.0 BETA`.
+- Zachowano identyfikator buildu `PHoeniX`.
+- Zachowano identyfikator poprawki `QUPA`.
+- Zachowano nazwy głównych zmiennych danych V2, w tym `localQuiz_data_v2`.
+- Dodano obsługę nowych ustawień z zachowaniem wartości domyślnych dla starszych zapisów.
+- Zachowano możliwość odczytywania obsługiwanych archiwów wcześniejszych wydań.
+- Rozbudowano konsolidację starszych szablonów pytań ze wspólnym bankiem pytań V2.
+- Nie dodano wymogu instalacji Node.js, Pythona, osobnej bazy danych ani zewnętrznego serwera.
+
+### Znane ograniczenia i uwagi
+
+- Wersja 2.1.0 BETA pozostaje wydaniem testowym.
+- Wbudowany HTTP Server Streamer.bot nadal udostępnia `/DoAction`, którego nie zabezpiecza automatycznie uwierzytelnianie WebSocket.
+- Należy korzystać z lokalnej konfiguracji HTTP i WebSocket na `127.0.0.1`, z włączonymi `Authentication` i `Enforce`, bez udostępniania portów do sieci.
+- Usuwanie archiwów jest operacją destrukcyjną. Przed pierwszym użyciem zalecane jest wykonanie osobnego backupu.
+- Nie jest gwarantowana pełna odporność na nagłą awarię procesu lub zasilania podczas operacji na plikach i trwałym magazynie Streamer.bot.
+- Symulator nie jest zamiennikiem rzeczywistych testów integracyjnych.
+
+### Aktualizacja z 2.0.2 BETA do 2.1.0 BETA
+
+1. Zakończ albo anuluj aktywną rundę.
+2. Wyeksportuj pełny backup oraz zachowaj dotychczasowy ranking i archiwa.
+3. Zastąp kod w Action `QUIZ - Silnik` nową zawartością `QuizEngine.cs`.
+4. Wykonaj `Find Refs`, a następnie `Save and Compile`.
+5. Podmień pliki `panel.html` i `overlay.html` na pliki z wydania 2.1.0 BETA.
+6. Odśwież panel w przeglądarce oraz źródło przeglądarkowe w OBS.
+7. Upewnij się, że panel i silnik używają wersji `2.1.0` oraz identyfikatorów `PHoeniX` i `QUPA`.
+8. Sprawdź istniejący ranking, historię rund, szablony i archiwa.
+9. Przetestuj przełączanie trybów, języków oraz działanie głosowania.
+10. Przed aktywowaniem automatycznego czyszczenia archiwów wykonaj osobną kopię bezpieczeństwa.
+
+Nie usuwaj istniejących zmiennych danych V2 ani wcześniejszych archiwów rankingów.
+
+---
+
 ## 2.0.2 BETA - archiwa rankingów i poprawki stabilności
 
 Wersja 2.0.2 rozbudowuje system V2 o lokalne archiwa rankingów i możliwość przywracania wyników. Wprowadza również poprawki bezpieczeństwa ścieżek plików, integralności archiwów, diagnostyki połączenia oraz obsługi błędów automatycznego rozliczenia.
