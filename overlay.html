@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src ws://127.0.0.1:* ws://localhost:*; img-src data:; font-src data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>LukiQuizEngine - Overlay 2.0.2 BETA</title>
+  <title>LukiQuizEngine - Overlay 2.1.0 BETA</title>
   <style>
     :root {
       --bg: rgba(10, 12, 21, 0.94);
@@ -102,27 +102,32 @@
       <section class="quiz-card">
         <div class="topline">
           <div class="brand"><span class="brand-dot"></span><span>Quiz</span></div> <!-- to mozna zmienic na dowolne, pokazuje sie to na overlayu w lewym gornym rogu -->
-          <div class="meta"><span id="timer"></span><span id="status-pill" class="status-pill">Głosowanie</span></div>
+          <div class="meta"><span id="timer"></span><span id="status-pill" class="status-pill"><span data-oi18n="o.f3c2b03bdf75">Głosowanie</span></span></div>
         </div>
         <h1 id="question" class="question"></h1>
         <div id="answers" class="answers"></div>
         <div class="footerline"><span id="hint" class="command-hint"></span><span id="vote-count"></span></div>
       </section>
       <aside class="leaderboard-card">
-        <div class="leaderboard-title"><span>Ranking</span><span id="top-label">Top 5</span></div>
+        <div class="leaderboard-title"><span><span data-oi18n="o.2ef9d509bd5a">Ranking</span></span><span id="top-label">Top 5</span></div>
         <div id="leaders" class="leaders"></div>
-        <div id="empty-ranking" class="empty-ranking">Ranking pojawi się po przyznaniu pierwszych punktów.</div>
+        <div id="empty-ranking" class="empty-ranking"><span data-oi18n="o.3b910fd67c59">Ranking pojawi się po przyznaniu pierwszych punktów.</span></div>
         <div id="team-scores" class="team-scores"></div>
       </aside>
     </div>
-    <section id="podium-card" class="podium-card" hidden><h2 class="podium-title">Quiz - Podium</h2><div id="podium-winners" class="podium"></div></section>
+    <section id="podium-card" class="podium-card" hidden><h2 class="podium-title"><span data-oi18n="o.5755d46539ab">Quiz - Podium</span></h2><div id="podium-winners" class="podium"></div></section>
   </main>
-  <div id="connection-warning" class="connection-warning">Brak połączenia ze Streamer.bot</div>
+  <div id="connection-warning" class="connection-warning"><span data-oi18n="o.925b370e3e98">Brak połączenia ze Streamer.bot</span></div>
   <script>(() => {
 'use strict';
+const OVERLAY_I18N={"pl":{"o.1da8498cde6f":"Nieprawidłowy adres WebSocket.","o.75dfea25ba32":"Overlay może łączyć się tylko z lokalnym WebSocketem.","o.224cc88dcf3a":"Nieprawidłowy lokalny adres WebSocket.","o.995463d5885c":"Nieprawidłowy port WebSocket.","o.1fb38e22bd1f":"OBS Browser nie obsługuje wymaganego SHA-256.","o.7fa29e82c8b7":"Streamer.bot nie przesłał danych uwierzytelniania.","o.7c00d70efe5b":"Nie można potwierdzić Enforce: brak odpowiedzi GetInfo na zalogowanym połączeniu.","o.f1725268632b":"limit czasu sondy","o.8b9103041c40":"nie można otworzyć sondy","o.00146dea1264":"nie można wysłać sondy","o.40c78cb4a3b3":"nierozpoznana odpowiedź sondy","o.fd56ae09848d":"sonda close=","o.7f4c9fbaf7d0":", clean=","o.6d8b35ebb00a":"błąd transportu sondy","o.6053ccfc0f72":"Brak bezpiecznego połączenia","o.9ac79d69f3b2":"Authentication potwierdzone. Enforce niepotwierdzone - sprawdź ustawienia serwera.","o.7be2e5788c61":"Połączenie zmienione - wynik operacji niepotwierdzony.","o.af362934dc00":"Otwórz stronę przez lokalny HTTP Server (127.0.0.1).","o.aa4640655086":"Hasło: 12-256 znaków.","o.035a5f984596":"Łączenie i uwierzytelnianie...","o.e7195a307bc1":"Włącz Authentication + Enforce.","o.023a3211e064":"Błędne hasło WebSocket.","o.4daea401849f":"Sonda przyjęła żądanie bez hasła. Sprawdź Authentication i Enforce.","o.67ea0b7cd21b":"Authentication + Enforce OK - subskrypcja General.Custom...","o.391e17913347":"Authentication potwierdzone, Enforce niepotwierdzone - subskrypcja.","o.56e4326ff924":"Nie udało się zasubskrybować General.Custom.","o.ca1db765dabc":"Authentication + Enforce OK - sprawdzam wersję silnika...","o.20231aa47fe7":"Authentication potwierdzone, Enforce niepotwierdzone - sprawdzam silnik.","o.6ba8f1f82d6f":"Streamer.bot odrzucił żądanie. Sprawdź nazwę i stan Action QUIZ - Silnik.","o.2c1a9a975b8b":"Rozłączono - wynik operacji niepotwierdzony. Odśwież ranking po połączeniu.","o.22bf6b60c66b":"Rozłączono - ponowne połączenie...","o.aa3fd2410cca":"Brak połączenia WebSocket.","o.95f8efaff0b9":"Niezgodne wersje: panel {p0}, silnik {p1} - podmień C# i odśwież pliki.","o.9fdbc3d1a047":"Niezgodne wersje: panel {p0}, silnik {p1} - podmień kod C# i odśwież pliki.","o.ba8f8b703ea5":"Nieprawidłowa odpowiedź silnika. Sprawdź zgodność kodu C# z panelem.","o.2248d81cceed":"danych panelu","o.ce53f7b1bf76":"stanu rundy","o.76e9d6efa0d9":"szablonów","o.4cc340bedeb5":"podglądu backupu","o.19f765db3cc7":"podglądu szablonów","o.649ae46a953b":"Nie udało się odświeżyć ","o.f26f26e2cf8a":"Ponawiam odczyt.","o.9f8be29bf0de":"Sprawdź połączenie ze Streamer.bot i użyj Odśwież.","o.0e3f774c8ba3":"Brak potwierdzenia silnika dla ","o.70b9d4395e39":"Silnik odebrał żądanie, ale jeszcze nie potwierdził zapisu. ","o.c70fc7c9cbeb":"Wynik nieznany - odśwież dane i sprawdź build oraz log RECEIVED/COMMITTED.","o.e9c6494356b1":"Nie udało się wysłać żądania do silnika. Połącz panel ponownie.","o.9906a0630454":"Połączenie zamknięte.","o.69cc72ef1883":"Ankieta zamknięta","o.7534c413b709":"Głosowanie zamknięte","o.003ea6cf2af7":"Wyniki ankiety","o.1509005463a3":"Poprawna odpowiedź","o.7d5b155fbac6":"Ankieta trwa","o.b5f9d8a19d1b":"Głosowanie otwarte","o.1a5394569301":" · +{p0} pkt","o.54fe14f639a6":"Wpisz na czacie ","o.9cd7a5f95c68":"Ankieta została zamknięta","o.9be62367a515":"Czekamy na ujawnienie poprawnej odpowiedzi","o.7864f0124289":"Odpowiedź: {p0}","o.acea446bed8f":"Wynik rundy","o.d98df7df9fa9":"głos","o.c876fa27985f":"głosy","o.53eca854ee30":"głosów","o.b8ec98ed2da6":"Widz","o.df233111280b":"{p0} pkt","o.71a0a7505e21":"Drużyna","o.2c8f01ec32d4":"{p0} - {p1} pkt","o.b5911b6c4880":"PAUZA - ","o.224fa1231e35":"Który killer pojawił się jako pierwszy w Dead by Daylight?","o.f3c2b03bdf75":"Głosowanie","o.2ef9d509bd5a":"Ranking","o.3b910fd67c59":"Ranking pojawi się po przyznaniu pierwszych punktów.","o.5755d46539ab":"Quiz - Podium","o.925b370e3e98":"Brak połączenia ze Streamer.bot","o.bdf101b056a1":"rankingu","o.5d4a138bd762":"diagnostyki","o.e78c1ce19b1f":"backupu","o.40e0b797efb6":"danych"},"en":{"o.1da8498cde6f":"Invalid WebSocket address.","o.75dfea25ba32":"The overlay can only connect to a local WebSocket.","o.224cc88dcf3a":"Invalid local WebSocket address.","o.995463d5885c":"Invalid WebSocket port.","o.1fb38e22bd1f":"OBS Browser does not support the required SHA-256.","o.7fa29e82c8b7":"Streamer.bot did not send authentication data.","o.7c00d70efe5b":"Cannot confirm Enforce: no GetInfo response on the authenticated connection.","o.f1725268632b":"probe timed out","o.8b9103041c40":"cannot open probe","o.00146dea1264":"cannot send probe","o.40c78cb4a3b3":"unrecognized probe response","o.fd56ae09848d":"probe close=","o.7f4c9fbaf7d0":", clean=","o.6d8b35ebb00a":"probe transport error","o.6053ccfc0f72":"No secure connection","o.9ac79d69f3b2":"Authentication confirmed. Enforce unconfirmed - check server settings.","o.7be2e5788c61":"Connection changed - operation result unconfirmed.","o.af362934dc00":"Open the page through the local HTTP server (127.0.0.1).","o.aa4640655086":"Password: 12-256 characters.","o.035a5f984596":"Connecting and authenticating...","o.e7195a307bc1":"Enable Authentication + Enforce.","o.023a3211e064":"Incorrect WebSocket password.","o.4daea401849f":"The probe accepted an unauthenticated request. Check Authentication and Enforce.","o.67ea0b7cd21b":"Authentication + Enforce OK - subscribing to General.Custom...","o.391e17913347":"Authentication confirmed, Enforce unconfirmed - subscribing.","o.56e4326ff924":"Could not subscribe to General.Custom.","o.ca1db765dabc":"Authentication + Enforce OK - checking engine version...","o.20231aa47fe7":"Authentication confirmed, Enforce unconfirmed - checking engine.","o.6ba8f1f82d6f":"Streamer.bot rejected the request. Check the name and status of Action QUIZ - Silnik.","o.2c1a9a975b8b":"Disconnected - operation result unconfirmed. Refresh scores after reconnecting.","o.22bf6b60c66b":"Disconnected - reconnecting...","o.aa3fd2410cca":"No WebSocket connection.","o.95f8efaff0b9":"Version mismatch: panel {p0}, engine {p1} - replace C# and refresh the files.","o.9fdbc3d1a047":"Version mismatch: panel {p0}, engine {p1} - replace the C# code and refresh the files.","o.ba8f8b703ea5":"Invalid engine response. Check that the C# code matches the panel.","o.2248d81cceed":"panel data","o.ce53f7b1bf76":"round state","o.76e9d6efa0d9":"templates","o.4cc340bedeb5":"backup preview","o.19f765db3cc7":"template preview","o.649ae46a953b":"Could not refresh ","o.f26f26e2cf8a":"Retrying the read.","o.9f8be29bf0de":"Check the Streamer.bot connection and use Refresh.","o.0e3f774c8ba3":"No engine confirmation for ","o.70b9d4395e39":"The engine received the request but has not confirmed saving yet. ","o.c70fc7c9cbeb":"Result unknown - refresh data and check the build and RECEIVED/COMMITTED log.","o.e9c6494356b1":"Could not send the request to the engine. Reconnect the panel.","o.9906a0630454":"Connection closed.","o.69cc72ef1883":"Poll closed","o.7534c413b709":"Voting closed","o.003ea6cf2af7":"Poll results","o.1509005463a3":"Correct answer","o.7d5b155fbac6":"Poll open","o.b5f9d8a19d1b":"Voting open","o.1a5394569301":" · +{p0} pts","o.54fe14f639a6":"Type in chat ","o.9cd7a5f95c68":"The poll is closed","o.9be62367a515":"Waiting for the correct answer to be revealed","o.7864f0124289":"Answer: {p0}","o.acea446bed8f":"Round result","o.d98df7df9fa9":"vote","o.c876fa27985f":"votes","o.53eca854ee30":"votes","o.b8ec98ed2da6":"Viewer","o.df233111280b":"{p0} pts","o.71a0a7505e21":"Team","o.2c8f01ec32d4":"{p0} - {p1} pts","o.b5911b6c4880":"PAUSED - ","o.224fa1231e35":"Which killer appeared first in Dead by Daylight?","o.f3c2b03bdf75":"Voting","o.2ef9d509bd5a":"Leaderboard","o.3b910fd67c59":"The leaderboard will appear after the first points are awarded.","o.5755d46539ab":"Quiz - Podium","o.925b370e3e98":"No connection to Streamer.bot","o.bdf101b056a1":"leaderboard","o.5d4a138bd762":"diagnostics","o.e78c1ce19b1f":"backup","o.40e0b797efb6":"data"}};
+let overlayLanguage=new URLSearchParams(location.search).get('lang')==='en'?'en':'pl';
+function ot(key,params={}){return String(OVERLAY_I18N[overlayLanguage][key]??OVERLAY_I18N.pl[key]??key).replace(/\{(\w+)\}/g,(_,name)=>String(params[name]??''));}
+function setOverlayLanguage(lang){overlayLanguage=lang==='en'?'en':'pl';document.documentElement.lang=overlayLanguage;document.querySelectorAll('[data-oi18n]').forEach(node=>node.textContent=ot(node.dataset.oi18n));}
+setOverlayLanguage(overlayLanguage);
 const UI_BUILD='PHoeniX', CLIENT_PATCH='QUPA';
 const RANKING_MUTATIONS=new Set(['setscore','resetscores','importscores','restoreimportbackup','restorebackup','restoresnapshot','reveal','rescore','undo']);
-const APP_VERSION='2.0.2',ACTION_NAME='QUIZ - Silnik',MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
+const APP_VERSION='2.1.0',ACTION_NAME='QUIZ - Silnik',MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
 const LOOPBACK_HOSTS=new Set(['127.0.0.1','localhost']);
 const $=id=>document.getElementById(id);
 const overlayRoot=$('quiz-root'),questionEl=$('question'),answersEl=$('answers'),statusEl=$('status-pill'),timerEl=$('timer'),hintEl=$('hint'),voteCountEl=$('vote-count'),leadersEl=$('leaders'),emptyRankingEl=$('empty-ranking'),warningEl=$('connection-warning'),teamScoresEl=$('team-scores'),shell=$('shell'),podiumCard=$('podium-card'),podiumWinners=$('podium-winners'),topLabel=$('top-label');
@@ -130,10 +135,10 @@ let roundState=null,lastRevision=-1,serverClockOffset=0,previousRoundId='',previ
 
 function parseSocketMessage(raw){if(typeof raw!=='string'||raw.length>MAX_SOCKET_MESSAGE_LENGTH)return null;try{return JSON.parse(raw);}catch{return null;}}
 function isTrustedPageOrigin(){return location.protocol==='http:'&&LOOPBACK_HOSTS.has(location.hostname.toLowerCase());}
-function normalizeWebSocketUrl(raw){const candidate=String(raw||'').trim();if(!candidate||candidate.length>512)throw Error('Nieprawidłowy adres WebSocket.');let url;try{url=new URL(candidate);}catch{throw Error('Nieprawidłowy adres WebSocket.');}if(url.protocol!=='ws:'||!LOOPBACK_HOSTS.has(url.hostname.toLowerCase()))throw Error('Overlay może łączyć się tylko z lokalnym WebSocketem.');if(url.username||url.password||url.search||url.hash)throw Error('Nieprawidłowy lokalny adres WebSocket.');if(url.port){const p=Number(url.port);if(!Number.isInteger(p)||p<1||p>65535)throw Error('Nieprawidłowy port WebSocket.');}return url.href;}
+function normalizeWebSocketUrl(raw){const candidate=String(raw||'').trim();if(!candidate||candidate.length>512)throw Error(ot("o.1da8498cde6f"));let url;try{url=new URL(candidate);}catch{throw Error(ot("o.1da8498cde6f"));}if(url.protocol!=='ws:'||!LOOPBACK_HOSTS.has(url.hostname.toLowerCase()))throw Error(ot("o.75dfea25ba32"));if(url.username||url.password||url.search||url.hash)throw Error(ot("o.224cc88dcf3a"));if(url.port){const p=Number(url.port);if(!Number.isInteger(p)||p<1||p>65535)throw Error(ot("o.995463d5885c"));}return url.href;}
 function bytesToBase64(bytes){let binary='';for(let offset=0;offset<bytes.length;offset+=8192){const chunk=bytes.subarray(offset,Math.min(offset+8192,bytes.length));binary+=String.fromCharCode(...chunk);}return btoa(binary);}
-async function sha256Base64(value){if(!window.crypto?.subtle||!window.TextEncoder)throw Error('OBS Browser nie obsługuje wymaganego SHA-256.');const bytes=new TextEncoder().encode(String(value));const digest=await crypto.subtle.digest('SHA-256',bytes);return bytesToBase64(new Uint8Array(digest));}
-async function buildAuthentication(password,salt,challenge){if(!salt||!challenge)throw Error('Streamer.bot nie przesłał danych uwierzytelniania.');const secret=await sha256Base64(String(password)+String(salt));return sha256Base64(secret+String(challenge));}
+async function sha256Base64(value){if(!window.crypto?.subtle||!window.TextEncoder)throw Error(ot("o.1fb38e22bd1f"));const bytes=new TextEncoder().encode(String(value));const digest=await crypto.subtle.digest('SHA-256',bytes);return bytesToBase64(new Uint8Array(digest));}
+async function buildAuthentication(password,salt,challenge){if(!salt||!challenge)throw Error(ot("o.7fa29e82c8b7"));const secret=await sha256Base64(String(password)+String(salt));return sha256Base64(secret+String(challenge));}
 
 function authenticatedInfo(socket, timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -147,7 +152,7 @@ function authenticatedInfo(socket, timeoutMs) {
       socket.removeEventListener('close', closed);
       socket.removeEventListener('error', closed);
       if (ok) resolve();
-      else reject(Error('Nie można potwierdzić Enforce: brak odpowiedzi GetInfo na zalogowanym połączeniu.'));
+      else reject(Error(ot("o.7c00d70efe5b")));
     };
     const message = event => {
       const p = parseSocketMessage(event.data);
@@ -176,9 +181,9 @@ async function verifyEnforce(rawUrl, authenticatedSocket, timeoutMs = 3500) {
       if (socket && socket.readyState < WebSocket.CLOSING) socket.close();
       resolve({enforced, detail});
     };
-    const timer = setTimeout(() => finish(null, 'limit czasu sondy'), timeoutMs);
+    const timer = setTimeout(() => finish(null, ot("o.f1725268632b")), timeoutMs);
     try { socket = new WebSocket(rawUrl); }
-    catch { finish(null, 'nie można otworzyć sondy'); return; }
+    catch { finish(null, ot("o.8b9103041c40")); return; }
     socket.addEventListener('message', event => {
       const p = parseSocketMessage(event.data);
       if (!p) return;
@@ -186,58 +191,58 @@ async function verifyEnforce(rawUrl, authenticatedSocket, timeoutMs = 3500) {
         if (!p.authentication?.salt || !p.authentication?.challenge) { finish(false); return; }
         sent = true;
         try { socket.send(JSON.stringify({request:'GetInfo', id})); }
-        catch { finish(null, 'nie można wysłać sondy'); }
+        catch { finish(null, ot("o.00146dea1264")); }
         return;
       }
       if (sent && p.id === id) {
         if (p.status === 'ok') finish(false);
         else if (p.status === 'error' && /^(?:authentication (?:is )?required|not authenticated)[.!]?$/i.test(String(p.error || p.message || '').trim())) finish(true);
-        else finish(null, 'nierozpoznana odpowiedź sondy');
+        else finish(null, ot("o.40c78cb4a3b3"));
       }
     });
     socket.addEventListener('close', event => {
-      finish(null, 'sonda close=' + event.code + ', clean=' + event.wasClean);
+      finish(null, ot("o.fd56ae09848d") + event.code + ot("o.7f4c9fbaf7d0") + event.wasClean);
     });
-    socket.addEventListener('error', () => finish(null, 'błąd transportu sondy'));
+    socket.addEventListener('error', () => finish(null, ot("o.6d8b35ebb00a")));
   });
   if (result.enforced === false) return false;
   await authenticatedInfo(authenticatedSocket, timeoutMs);
   return result.enforced;
 }
 
-function showWarning(text){warningEl.textContent=String(text||'Brak bezpiecznego połączenia').slice(0,220);warningEl.classList.add('show');}
-function hideWarning(){if(connection?.authenticated&&connection.enforce===null){showWarning('Authentication potwierdzone. Enforce niepotwierdzone - sprawdź ustawienia serwera.');return;}warningEl.classList.remove('show');}
+function showWarning(text){warningEl.textContent=String(text||ot("o.6053ccfc0f72")).slice(0,220);warningEl.classList.add('show');}
+function hideWarning(){if(connection?.authenticated&&connection.enforce===null){showWarning(ot("o.9ac79d69f3b2"));return;}warningEl.classList.remove('show');}
 
 class QuizConnection {
  constructor(onData,onStatus,bootstrap=['sync','getscores','getdata']){this.onData=onData;this.onStatus=onStatus;this.bootstrap=bootstrap;this.socket=null;this.password='';this.url='';this.authenticated=false;this.generation=0;this.counter=0;this.reconnect=true;this.authId='';this.subId='';this.enforce=null;this.timer=null;this.engineReady=false;this.pending=new Map();this.readRetryTimers=new Set();}
  async connect(url,password){
-  const generation=++this.generation;this.engineReady=false;this.failPending('Połączenie zmienione - wynik operacji niepotwierdzony.');clearTimeout(this.timer);if(this.socket)this.socket.close();this.socket=null;this.authenticated=false;this.subId='';this.enforce=null;
-  try{if(!isTrustedPageOrigin())throw Error('Otwórz stronę przez lokalny HTTP Server (127.0.0.1).');this.url=normalizeWebSocketUrl(url);if(typeof password!=='string'||password.length<12||password.length>256)throw Error('Hasło: 12-256 znaków.');this.password=password;this.reconnect=true;
-   const socket=new WebSocket(this.url);this.socket=socket;this.onStatus('Łączenie i uwierzytelnianie…',false);
+  const generation=++this.generation;this.engineReady=false;this.failPending(ot("o.7be2e5788c61"));clearTimeout(this.timer);if(this.socket)this.socket.close();this.socket=null;this.authenticated=false;this.subId='';this.enforce=null;
+  try{if(!isTrustedPageOrigin())throw Error(ot("o.af362934dc00"));this.url=normalizeWebSocketUrl(url);if(typeof password!=='string'||password.length<12||password.length>256)throw Error(ot("o.aa4640655086"));this.password=password;this.reconnect=true;
+   const socket=new WebSocket(this.url);this.socket=socket;this.onStatus(ot("o.035a5f984596"),false);
    socket.addEventListener('message',async event=>{
     if(this.socket!==socket||generation!==this.generation)return;
     const p=parseSocketMessage(event.data);if(!p)return;
     try{
      if(p.request==='Hello'){
-      if(!p.authentication?.salt||!p.authentication?.challenge)throw Error('Włącz Authentication + Enforce.');
+      if(!p.authentication?.salt||!p.authentication?.challenge)throw Error(ot("o.e7195a307bc1"));
       this.authId='quiz-auth-'+generation+'-'+(++this.counter);
       const authentication=await buildAuthentication(this.password,p.authentication.salt,p.authentication.challenge);
       if(this.socket===socket&&generation===this.generation)socket.send(JSON.stringify({request:'Authenticate',id:this.authId,authentication}));return;
      }
      if(p.id===this.authId){
-      if(p.status!=='ok')throw Error('Błędne hasło WebSocket.');
+      if(p.status!=='ok')throw Error(ot("o.023a3211e064"));
       const enforce=await verifyEnforce(this.url,socket);
       if(this.socket!==socket||generation!==this.generation)return;
-      this.enforce=enforce;if(enforce===false)throw Error('Sonda przyjęła żądanie bez hasła. Sprawdź Authentication i Enforce.');
-      this.subId='quiz-sub-'+generation+'-'+(++this.counter);this.onStatus(enforce===true?'Authentication + Enforce OK - subskrypcja General.Custom…':'Authentication potwierdzone, Enforce niepotwierdzone - subskrypcja.',false);
+      this.enforce=enforce;if(enforce===false)throw Error(ot("o.4daea401849f"));
+      this.subId='quiz-sub-'+generation+'-'+(++this.counter);this.onStatus(enforce===true?ot("o.67ea0b7cd21b"):ot("o.391e17913347"),false);
       socket.send(JSON.stringify({request:'Subscribe',id:this.subId,events:{General:['Custom']}}));return;
      }
      if(p.id===this.subId){
-      if(p.status!=='ok')throw Error('Nie udało się zasubskrybować General.Custom.');
-      this.authenticated=true;this.onStatus(this.enforce===true?'Authentication + Enforce OK - sprawdzam wersję silnika…':'Authentication potwierdzone, Enforce niepotwierdzone - sprawdzam silnik.',false);this.action('diagnostics');return;
+      if(p.status!=='ok')throw Error(ot("o.56e4326ff924"));
+      this.authenticated=true;this.onStatus(this.enforce===true?ot("o.ca1db765dabc"):ot("o.20231aa47fe7"),false);this.action('diagnostics');return;
      }
      if(!this.authenticated)return;
-     if(p.id&&this.pending.has(p.id)&&p.status==='error'){const job=this.pending.get(p.id);clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.id);this.onData({type:job.read?'quiz-read-error':'quiz-error',requestId:p.id,operation:job.op,message:'Streamer.bot odrzucił żądanie. Sprawdź nazwę i stan Action QUIZ - Silnik.'});return;}
+     if(p.id&&this.pending.has(p.id)&&p.status==='error'){const job=this.pending.get(p.id);clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.id);this.onData({type:job.read?'quiz-read-error':'quiz-error',requestId:p.id,operation:job.op,message:ot("o.6ba8f1f82d6f")});return;}
      const seen=new Set();const walk=(v,depth=0)=>{if(depth>7||seen.size>100000)return;if(typeof v==='string'&&v.length<MAX_SOCKET_MESSAGE_LENGTH){try{v=JSON.parse(v);}catch{return;}}
       if(!v||typeof v!=='object'||seen.has(v))return;seen.add(v);
       if(typeof v.type==='string'&&v.type.startsWith('quiz-')){this.handle(v);return;}
@@ -246,8 +251,8 @@ class QuizConnection {
      };walk(p);
     }catch(error){this.reconnect=false;this.authenticated=false;this.onStatus(error.message,false);socket.close();}
    });
-   socket.addEventListener('close',()=>{if(this.socket!==socket)return;this.socket=null;this.authenticated=false;this.engineReady=false;this.failPending('Rozłączono - wynik operacji niepotwierdzony. Odśwież ranking po połączeniu.');if(this.reconnect){this.onStatus('Rozłączono - ponowne połączenie…',false);this.timer=setTimeout(()=>this.connect(this.url,this.password),2500);}});
-   socket.addEventListener('error',()=>{if(this.socket===socket)this.onStatus('Brak połączenia WebSocket.',false);});
+   socket.addEventListener('close',()=>{if(this.socket!==socket)return;this.socket=null;this.authenticated=false;this.engineReady=false;this.failPending(ot("o.2c1a9a975b8b"));if(this.reconnect){this.onStatus(ot("o.22bf6b60c66b"),false);this.timer=setTimeout(()=>this.connect(this.url,this.password),2500);}});
+   socket.addEventListener('error',()=>{if(this.socket===socket)this.onStatus(ot("o.aa3fd2410cca"),false);});
   }catch(error){this.reconnect=false;this.onStatus(error.message,false);}
  }
  failPending(message){for(const[id,job]of this.pending){clearTimeout(job.timer);clearTimeout(job.lateTimer);if(!job.read)this.onData({type:'quiz-error',requestId:id,message});}this.pending.clear();for(const timer of this.readRetryTimers)clearTimeout(timer);this.readRetryTimers.clear();}
@@ -260,9 +265,9 @@ class QuizConnection {
    job.timer=setTimeout(job.onTimeout,30000);if(!job.read)this.onData({type:'quiz-received',requestId:p.requestId,operation:job.op});return;
   }
   if(p.type==='quiz-diagnostics'){
-   if(!this.pending.has(p.requestId)){if(!this.engineReady&&p.build!==UI_BUILD)this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień C# i odśwież pliki.`,false);return;}
-   if(p.build!==UI_BUILD||p.protocol!==1){this.engineReady=false;this.onStatus(`Niezgodne wersje: panel ${UI_BUILD}, silnik ${p.build??'?'} - podmień kod C# i odśwież pliki.`,false);this.onData(p);return;}
-   if(!this.engineReady){this.engineReady=true;this.onStatus(this.enforce===true?'PASS - Authentication + Enforce - '+UI_BUILD+' - '+CLIENT_PATCH:'Authentication potwierdzone. Enforce niepotwierdzone - sprawdź ustawienia serwera.',true);for(const op of this.bootstrap)this.action(op);}
+   if(!this.pending.has(p.requestId)){if(!this.engineReady&&p.build!==UI_BUILD)this.onStatus(ot("o.95f8efaff0b9",{p0:UI_BUILD,p1:p.build??'?'}),false);return;}
+   if(p.build!==UI_BUILD||p.protocol!==1){this.engineReady=false;this.onStatus(ot("o.9fdbc3d1a047",{p0:UI_BUILD,p1:p.build??'?'}),false);this.onData(p);return;}
+   if(!this.engineReady){this.engineReady=true;this.onStatus(this.enforce===true?'PASS - Authentication + Enforce - '+UI_BUILD+' - '+CLIENT_PATCH:ot("o.9ac79d69f3b2"),true);for(const op of this.bootstrap)this.action(op);}
   }
   const payloadJob=this.pending.get(p.requestId);
   if(payloadJob?.read&&p.build===UI_BUILD&&p.operation===payloadJob.op&&Number.isSafeInteger(p.revision)&&this.readPayloadMatches(payloadJob.op,p)){
@@ -271,7 +276,7 @@ class QuizConnection {
   if(p.type==='quiz-result'||p.type==='quiz-error'){
    const job=this.pending.get(p.requestId);
    if(!job){if(p.type==='quiz-error'&&!p.requestId)this.onData(p);return;}
-   if(p.type==='quiz-result'&&(p.build!==UI_BUILD||p.operation!==job.op||p.ok!==true||!Number.isSafeInteger(p.revision))){this.onData({type:job.read?'quiz-read-error':'quiz-error',operation:job.op,requestId:p.requestId,message:'Nieprawidłowa odpowiedź silnika. Sprawdź zgodność kodu C# z panelem.'});return;}
+   if(p.type==='quiz-result'&&(p.build!==UI_BUILD||p.operation!==job.op||p.ok!==true||!Number.isSafeInteger(p.revision))){this.onData({type:job.read?'quiz-read-error':'quiz-error',operation:job.op,requestId:p.requestId,message:ot("o.ba8f8b703ea5")});return;}
    if(p.type==='quiz-result'&&job.read){job.acknowledged=true;return;}
    clearTimeout(job.timer);clearTimeout(job.lateTimer);this.pending.delete(p.requestId);
    if(p.type==='quiz-result'){if(!job.read)this.onData({type:'quiz-confirmed',requestId:p.requestId,operation:job.op,revision:p.revision});return;}
@@ -288,13 +293,13 @@ class QuizConnection {
    if(this.pending.get(id)!==job)return;
    if(read){
     this.pending.delete(id);
-    const labels={getscores:'rankingu',getdata:'danych panelu',sync:'stanu rundy',tick:'stanu rundy',diagnostics:'diagnostyki',exportbackup:'backupu',exportbank:'szablonów',previewbackup:'podglądu backupu',previewbank:'podglądu szablonów'};
+    const labels={getscores:ot("o.bdf101b056a1"),getdata:ot("o.2248d81cceed"),sync:ot("o.ce53f7b1bf76"),tick:ot("o.ce53f7b1bf76"),diagnostics:ot("o.5d4a138bd762"),exportbackup:ot("o.e78c1ce19b1f"),exportbank:ot("o.76e9d6efa0d9"),previewbackup:ot("o.4cc340bedeb5"),previewbank:ot("o.19f765db3cc7")};
     const retryEligible=readRetry===0&&['sync','tick','getscores','getdata','diagnostics'].includes(op);
-    this.onData({type:'quiz-read-error',requestId:id,operation:op,message:'Nie udało się odświeżyć '+(labels[op]||'danych')+'. '+(retryEligible?'Ponawiam odczyt.':'Sprawdź połączenie ze Streamer.bot i użyj Odśwież.')});
+    this.onData({type:'quiz-read-error',requestId:id,operation:op,message:ot("o.649ae46a953b")+(labels[op]||ot("o.40e0b797efb6"))+'. '+(retryEligible?ot("o.f26f26e2cf8a"):ot("o.9f8be29bf0de"))});
     if(retryEligible){const retryTimer=setTimeout(()=>{this.readRetryTimers.delete(retryTimer);if(this.authenticated)this.action(op,args,1);},1000);this.readRetryTimers.add(retryTimer);}return;
    }
    else{job.timedOut=true;job.lateTimer=setTimeout(()=>{if(this.pending.get(id)===job)this.pending.delete(id);},60000);}
-   const message='Brak potwierdzenia silnika dla '+op+'. '+(job.received?'Silnik odebrał żądanie, ale jeszcze nie potwierdził zapisu. ':'')+'Wynik nieznany - odśwież dane i sprawdź build oraz log RECEIVED/COMMITTED.';
+   const message=ot("o.0e3f774c8ba3")+op+'. '+(job.received?ot("o.70b9d4395e39"):'')+ot("o.c70fc7c9cbeb");
    if(op==='diagnostics')this.onStatus(message,false);this.onData({type:'quiz-error',requestId:id,message});
   };
   job.timer=setTimeout(job.onTimeout,8000);this.pending.set(id,job);
@@ -303,27 +308,28 @@ class QuizConnection {
   if(RANKING_MUTATIONS.has(op))Object.assign(hostArgs,normalized);
   if(!read)this.onData({type:'quiz-pending',requestId:id,operation:op});
   try{this.socket.send(JSON.stringify({request:'DoAction',action:{name:ACTION_NAME},args:hostArgs,id}));return true;}
-  catch{clearTimeout(job.timer);this.pending.delete(id);this.onData({type:read?'quiz-read-error':'quiz-error',requestId:id,operation:op,message:'Nie udało się wysłać żądania do silnika. Połącz panel ponownie.'});return false;}
+  catch{clearTimeout(job.timer);this.pending.delete(id);this.onData({type:read?'quiz-read-error':'quiz-error',requestId:id,operation:op,message:ot("o.e9c6494356b1")});return false;}
  }
  sync(){if(this.authenticated){this.action('sync');this.socket.send(JSON.stringify({request:'GetGlobal',variable:'localQuiz_public_v2',persisted:false,id:'quiz-global-'+(++this.counter)}));}}
- close(){this.reconnect=false;this.engineReady=false;this.failPending('Połączenie zamknięte.');clearTimeout(this.timer);this.socket?.close();this.password='';}
+ close(){this.reconnect=false;this.engineReady=false;this.failPending(ot("o.9906a0630454"));clearTimeout(this.timer);this.socket?.close();this.password='';}
 }
 
-function validateState(p){if(!p||p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||!['idle','open','locked','revealed','cancelled'].includes(p.status)||typeof p.question!=='string'||p.question.length>500||!Array.isArray(p.options)||p.options.length>12||!Array.isArray(p.leaderboard)||p.leaderboard.length>10)return false;const o=p.overlay;if(!o||!/^#[a-f0-9]{6}$/i.test(o.Accent)||!['FULL','COMPACT','MINIMAL','NO_LEADERBOARD'].includes(o.Layout))return false;for(const[k,min,max]of [['Scale',40,150],['X',0,1800],['Y',0,1000],['Top',1,10],['Opacity',10,100],['Volume',0,100]])if(!Number.isInteger(o[k])||o[k]<min||o[k]>max)return false;return p.options.every(x=>x&&typeof x.id==='string'&&x.id.length<=80&&typeof x.text==='string'&&x.text.length<=240&&Number.isInteger(x.count)&&x.count>=0&&x.count<=25000)&&Number.isInteger(p.totalVotes)&&p.totalVotes>=0&&p.totalVotes<=25000;}
+function validateState(p){if(!p||!['pl','en'].includes(p.language||'pl')||p.appVersion!==APP_VERSION||!Number.isSafeInteger(p.revision)||!['idle','open','locked','revealed','cancelled'].includes(p.status)||typeof p.question!=='string'||p.question.length>500||!Array.isArray(p.options)||p.options.length>12||!Array.isArray(p.leaderboard)||p.leaderboard.length>10)return false;const o=p.overlay;if(!o||!/^#[a-f0-9]{6}$/i.test(o.Accent)||!['FULL','COMPACT','MINIMAL','NO_LEADERBOARD'].includes(o.Layout))return false;for(const[k,min,max]of [['Scale',40,150],['X',0,1800],['Y',0,1000],['Top',1,10],['Opacity',10,100],['Volume',0,100]])if(!Number.isInteger(o[k])||o[k]<min||o[k]>max)return false;return p.options.every(x=>x&&typeof x.id==='string'&&x.id.length<=80&&typeof x.text==='string'&&x.text.length<=240&&Number.isInteger(x.count)&&x.count>=0&&x.count<=25000)&&Number.isInteger(p.totalVotes)&&p.totalVotes>=0&&p.totalVotes<=25000;}
 function tone(kind){const o=roundState?.overlay;if(!o?.Sounds||o.Volume===0)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();audioContext.resume().catch(()=>{});const tones=kind==='podium'?[523,659,784]:kind==='reveal'?[659,880]:kind==='lock'?[330]:[440];tones.forEach((hz,i)=>{const start=audioContext.currentTime+i*.13,osc=audioContext.createOscillator(),gain=audioContext.createGain();osc.frequency.value=hz;gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(o.Volume/100*.12,start+.01);gain.gain.exponentialRampToValueAtTime(.0001,start+.16);osc.connect(gain);gain.connect(audioContext.destination);osc.start(start);osc.stop(start+.18);});}catch{}}
 function setHintStrong(prefix,strongText){hintEl.replaceChildren(document.createTextNode(prefix));const strong=document.createElement('strong');strong.textContent=strongText;hintEl.append(strong);}
-function renderStatus(p){statusEl.className='status-pill';if(p.status==='locked'){statusEl.classList.add('locked');statusEl.textContent=p.mode==='POLL'?'Ankieta zamknięta':'Głosowanie zamknięte';}else if(p.status==='revealed'){statusEl.classList.add('revealed');statusEl.textContent=p.mode==='POLL'?'Wyniki ankiety':'Poprawna odpowiedź';}else statusEl.textContent=p.mode==='POLL'?'Ankieta trwa':'Głosowanie otwarte';}
-function renderAnswers(p){answersEl.replaceChildren();answersEl.dataset.count=String(p.options.length);const total=Math.max(0,Number(p.totalVotes||0));for(const option of p.options){const count=Math.max(0,Number(option.count||0)),percentage=total>0?Math.round(count/total*100):0,item=document.createElement('div');item.className='answer';if(p.status==='revealed'&&p.mode==='QUIZ'&&option.correct)item.classList.add('correct');else if(p.status==='revealed'&&p.mode==='QUIZ'&&option.partial)item.classList.add('adjacent');const fill=document.createElement('div');fill.className='answer-fill';fill.style.width=p.distribution?`${percentage}%`:'0%';const inner=document.createElement('div');inner.className='answer-inner';const index=document.createElement('span');index.className='answer-index';index.textContent='!'+option.index;const text=document.createElement('span');text.className='answer-text';text.textContent=option.text||'';const score=document.createElement('span');score.className='answer-score';if(p.distribution){let value=`${count}`;if(p.overlay.Percentages)value+=` · ${percentage}%`;if(p.status==='revealed'&&Number(option.points)>0)value+=` · +${Number(option.points)} pkt`;score.textContent=value;}else score.textContent='';inner.append(index,text,score);item.append(fill,inner);answersEl.append(item);}if(p.status==='open')setHintStrong('Wpisz na czacie ',`!1-!${p.options.length}`);else if(p.status==='locked')hintEl.textContent=p.mode==='POLL'?'Ankieta została zamknięta':'Czekamy na ujawnienie poprawnej odpowiedzi';else if(p.mode==='POLL')hintEl.textContent='Wyniki ankiety';else{const correct=p.options.filter(x=>x.correct);hintEl.textContent=correct.length?`Odpowiedź: ${correct.map(x=>'!'+x.index+' '+x.text).join(' - ')}`:'Wynik rundy';}voteCountEl.textContent=p.countsVisible?`${total} ${total===1?'głos':total%10>=2&&total%10<=4&&!(total%100>=12&&total%100<=14)?'głosy':'głosów'}`:'';}
-function renderRanking(p){leadersEl.replaceChildren();const top=p.leaderboard.slice(0,p.overlay.Top);topLabel.textContent='Top '+p.overlay.Top;emptyRankingEl.style.display=top.length?'none':'grid';for(const leader of top){const row=document.createElement('div');row.className='leader';const position=document.createElement('span');position.className='leader-position';position.textContent=leader.position;const name=document.createElement('span');name.className='leader-name';name.textContent=String(leader.userName||'Widz').slice(0,80);const points=document.createElement('span');points.className='leader-points';points.textContent=`${Number(leader.points||0)} pkt`;row.append(position,name,points);leadersEl.append(row);}teamScoresEl.replaceChildren();if(p.teamMode&&Array.isArray(p.teams))for(const team of p.teams.slice(0,10)){const row=document.createElement('div');row.textContent=`${String(team.name||'Drużyna').slice(0,80)} - ${Number(team.points||0)} pkt`;teamScoresEl.append(row);}}
-function renderPodium(p){podiumWinners.replaceChildren();for(const index of [1,0,2]){const l=p.leaderboard[index];if(!l)continue;const card=document.createElement('div');card.className='winner'+(index===0?' first':'');const medal=document.createElement('div');medal.className='winner-medal';medal.textContent=index+1;const name=document.createElement('div');name.className='winner-name';name.textContent=String(l.userName||'Widz').slice(0,80);const points=document.createElement('div');points.className='winner-points';points.textContent=`${Number(l.points||0)} pkt`;card.append(medal,name,points);podiumWinners.append(card);}}
-function updateTimer(){const p=roundState;if(!p){timerEl.textContent='';return;}const ms=p.paused?p.remainingMs:p.closesAt-(Date.now()+serverClockOffset),left=Math.max(0,Math.ceil(ms/1000));timerEl.textContent=p.overlay.Timer&&p.status==='open'&&(p.paused||p.closesAt>0)?`${p.paused?'PAUZA - ':''}${left} s`:'';if(p.status==='open'&&!p.paused&&p.closesAt>0&&left>0&&left<=5&&left!==lastCountdownSecond){lastCountdownSecond=left;tone('tick');}}
+function renderStatus(p){statusEl.className='status-pill';if(p.status==='locked'){statusEl.classList.add('locked');statusEl.textContent=p.mode==='POLL'?ot("o.69cc72ef1883"):ot("o.7534c413b709");}else if(p.status==='revealed'){statusEl.classList.add('revealed');statusEl.textContent=p.mode==='POLL'?ot("o.003ea6cf2af7"):ot("o.1509005463a3");}else statusEl.textContent=p.mode==='POLL'?ot("o.7d5b155fbac6"):ot("o.b5f9d8a19d1b");}
+function renderAnswers(p){answersEl.replaceChildren();answersEl.dataset.count=String(p.options.length);const total=Math.max(0,Number(p.totalVotes||0));for(const option of p.options){const count=Math.max(0,Number(option.count||0)),percentage=total>0?Math.round(count/total*100):0,item=document.createElement('div');item.className='answer';if(p.status==='revealed'&&p.mode==='QUIZ'&&option.correct)item.classList.add('correct');else if(p.status==='revealed'&&p.mode==='QUIZ'&&option.partial)item.classList.add('adjacent');const fill=document.createElement('div');fill.className='answer-fill';fill.style.width=p.distribution?`${percentage}%`:'0%';const inner=document.createElement('div');inner.className='answer-inner';const index=document.createElement('span');index.className='answer-index';index.textContent='!'+option.index;const text=document.createElement('span');text.className='answer-text';text.textContent=option.text||'';const score=document.createElement('span');score.className='answer-score';if(p.distribution){let value=`${count}`;if(p.overlay.Percentages)value+=` · ${percentage}%`;if(p.status==='revealed'&&Number(option.points)>0)value+=ot("o.1a5394569301",{p0:Number(option.points)});score.textContent=value;}else score.textContent='';inner.append(index,text,score);item.append(fill,inner);answersEl.append(item);}if(p.status==='open')setHintStrong(ot("o.54fe14f639a6"),`!1-!${p.options.length}`);else if(p.status==='locked')hintEl.textContent=p.mode==='POLL'?ot("o.9cd7a5f95c68"):ot("o.9be62367a515");else if(p.mode==='POLL')hintEl.textContent=ot("o.003ea6cf2af7");else{const correct=p.options.filter(x=>x.correct);hintEl.textContent=correct.length?ot("o.7864f0124289",{p0:correct.map(x=>'!'+x.index+' '+x.text).join(' - ')}):ot("o.acea446bed8f");}voteCountEl.textContent=p.countsVisible?`${total} ${total===1?ot("o.d98df7df9fa9"):total%10>=2&&total%10<=4&&!(total%100>=12&&total%100<=14)?ot("o.c876fa27985f"):ot("o.53eca854ee30")}`:'';}
+function renderRanking(p){leadersEl.replaceChildren();const top=p.leaderboard.slice(0,p.overlay.Top);topLabel.textContent='Top '+p.overlay.Top;emptyRankingEl.style.display=top.length?'none':'grid';for(const leader of top){const row=document.createElement('div');row.className='leader';const position=document.createElement('span');position.className='leader-position';position.textContent=leader.position;const name=document.createElement('span');name.className='leader-name';name.textContent=String(leader.userName||ot("o.b8ec98ed2da6")).slice(0,80);const points=document.createElement('span');points.className='leader-points';points.textContent=ot("o.df233111280b",{p0:Number(leader.points||0)});row.append(position,name,points);leadersEl.append(row);}teamScoresEl.replaceChildren();if(p.teamMode&&Array.isArray(p.teams))for(const team of p.teams.slice(0,10)){const row=document.createElement('div');row.textContent=ot("o.2c8f01ec32d4",{p0:String(team.name||ot("o.71a0a7505e21")).slice(0,80),p1:Number(team.points||0)});teamScoresEl.append(row);}}
+function renderPodium(p){podiumWinners.replaceChildren();for(const index of [1,0,2]){const l=p.leaderboard[index];if(!l)continue;const card=document.createElement('div');card.className='winner'+(index===0?' first':'');const medal=document.createElement('div');medal.className='winner-medal';medal.textContent=index+1;const name=document.createElement('div');name.className='winner-name';name.textContent=String(l.userName||ot("o.b8ec98ed2da6")).slice(0,80);const points=document.createElement('div');points.className='winner-points';points.textContent=ot("o.df233111280b",{p0:Number(l.points||0)});card.append(medal,name,points);podiumWinners.append(card);}}
+function updateTimer(){const p=roundState;if(!p){timerEl.textContent='';return;}const ms=p.paused?p.remainingMs:p.closesAt-(Date.now()+serverClockOffset),left=Math.max(0,Math.ceil(ms/1000));timerEl.textContent=p.overlay.Timer&&p.status==='open'&&(p.paused||p.closesAt>0)?`${p.paused?ot("o.b5911b6c4880"):''}${left} s`:'';if(p.status==='open'&&!p.paused&&p.closesAt>0&&left>0&&left<=5&&left!==lastCountdownSecond){lastCountdownSecond=left;tone('tick');}}
 function applyLayout(p){const o=p.overlay;overlayRoot.style.setProperty('--accent',o.Accent);overlayRoot.style.setProperty('--overlay-scale',String(o.Scale/100));const dx=o.X-40,dy=o.Y-40;overlayRoot.style.left=`calc(50% + ${dx}px)`;overlayRoot.style.bottom=`${40-dy}px`;overlayRoot.className=[p.visible&&(p.status!=='idle'||p.podium)?'visible':'',o.Layout==='COMPACT'?'layout-compact':o.Layout==='MINIMAL'?'layout-minimal':'',(!o.Leaderboard||o.Layout==='NO_LEADERBOARD')?'layout-no-leaderboard':'',!o.Animations?'no-motion':''].filter(Boolean).join(' ');overlayRoot.style.opacity=p.visible?String(o.Opacity/100):'0';}
-function receive(p){if(p.type==='quiz-read-error'){showWarning(p.message);return;}if(p.type==='quiz-read-ok'){hideWarning();return;}if(p.type!=='quiz-state'||!validateState(p)||p.revision<lastRevision)return;if(p.revision===lastRevision&&roundState){serverClockOffset=Number(p.serverNow)-Date.now();return;}lastRevision=p.revision;serverClockOffset=Number(p.serverNow)-Date.now();roundState=p;applyLayout(p);shell.hidden=Boolean(p.podium);podiumCard.hidden=!p.podium;if(p.podium)renderPodium(p);else{questionEl.textContent=p.question||'Quiz';renderStatus(p);renderAnswers(p);renderRanking(p);}if(previousRoundId===p.roundId){if(previousRoundStatus!==p.status&&p.status==='locked')tone('lock');if(previousRoundStatus!==p.status&&p.status==='revealed')tone('reveal');}else lastCountdownSecond=-1;if(!podiumWasVisible&&p.podium&&previousRoundId)tone('podium');previousRoundId=p.roundId;previousRoundStatus=p.status;podiumWasVisible=p.podium;updateTimer();}
+function receive(p){if(p.type==='quiz-read-error'){showWarning(p.message);return;}if(p.type==='quiz-read-ok'){hideWarning();return;}if(p.type!=='quiz-state'||!validateState(p)||p.revision<lastRevision)return;if(p.revision===lastRevision&&roundState){serverClockOffset=Number(p.serverNow)-Date.now();return;}lastRevision=p.revision;setOverlayLanguage(p.language||'pl');serverClockOffset=Number(p.serverNow)-Date.now();roundState=p;applyLayout(p);shell.hidden=Boolean(p.podium);podiumCard.hidden=!p.podium;if(p.podium)renderPodium(p);else{questionEl.textContent=p.question||'Quiz';renderStatus(p);renderAnswers(p);renderRanking(p);}if(previousRoundId===p.roundId){if(previousRoundStatus!==p.status&&p.status==='locked')tone('lock');if(previousRoundStatus!==p.status&&p.status==='revealed')tone('reveal');}else lastCountdownSecond=-1;if(!podiumWasVisible&&p.podium&&previousRoundId)tone('podium');previousRoundId=p.roundId;previousRoundStatus=p.status;podiumWasVisible=p.podium;updateTimer();}
 
 const params=new URLSearchParams(location.search),fragment=new URLSearchParams(location.hash.replace(/^#/,''));
 const connection=new QuizConnection(receive,(text,ok)=>{if(ok){lastRevision=-1;roundState=null;hideWarning();}else showWarning(text);},['sync']);
-if(params.get('demo')==='1')receive({type:'quiz-state',appVersion:APP_VERSION,revision:1,serverNow:Date.now(),status:'revealed',visible:true,question:'Który killer pojawił się jako pierwszy w Dead by Daylight?',roundId:'demo',mode:'QUIZ',distribution:true,countsVisible:true,totalVotes:100,closesAt:0,paused:false,remainingMs:0,overlay:{Layout:'FULL',Accent:'#9870ff',Scale:100,X:40,Y:40,Leaderboard:true,Top:5,Percentages:true,Timer:true,Opacity:100,Animations:true,Sounds:false,Volume:40,Podium:false},podium:false,options:['Trapper','Nurse','Huntress','Doctor'].map((text,i)=>({id:'demo-'+i,index:i+1,text,count:[65,20,10,5][i],correct:i===0,partial:i===1,points:i===0?3:i===1?1:0})),leaderboard:['Widz_007','Widz_02','Widz_03','Widz_04','Widz_05'].map((userName,i)=>({position:i+1,userName,points:25-i*3})),teams:[],teamMode:false});else connection.connect(fragment.get('ws')||'ws://127.0.0.1:8080/',fragment.get('password')||'');
+if(params.get('demo')==='1')receive({type:'quiz-state',appVersion:APP_VERSION,revision:1,language:overlayLanguage,serverNow:Date.now(),status:'revealed',visible:true,question:ot("o.224fa1231e35"),roundId:'demo',mode:'QUIZ',distribution:true,countsVisible:true,totalVotes:100,closesAt:0,paused:false,remainingMs:0,overlay:{Layout:'FULL',Accent:'#9870ff',Scale:100,X:40,Y:40,Leaderboard:true,Top:5,Percentages:true,Timer:true,Opacity:100,Animations:true,Sounds:false,Volume:40,Podium:false},podium:false,options:['Trapper','Nurse','Huntress','Doctor'].map((text,i)=>({id:'demo-'+i,index:i+1,text,count:[65,20,10,5][i],correct:i===0,partial:i===1,points:i===0?3:i===1?1:0})),leaderboard:['Widz_007','Widz_02','Widz_03','Widz_04','Widz_05'].map((userName,i)=>({position:i+1,userName,points:25-i*3})),teams:[],teamMode:false});else connection.connect(fragment.get('ws')||'ws://127.0.0.1:8080/',fragment.get('password')||'');
 setInterval(updateTimer,250);setInterval(()=>connection.sync(),3000);window.addEventListener('beforeunload',()=>connection.close());
 })();</script>
 </body>
 </html>
+
