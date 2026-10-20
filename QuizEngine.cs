@@ -10,10 +10,10 @@ using System.Security.Cryptography;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-// LukiQuizEngine 2.0.2 BETA GIGA UPDATE V2
+// LukiQuizEngine 2.1.0 BETA GIGA UPDATE V2
 public class CPHInline
 {
-    private const string AppVersion = "2.0.2";
+    private const string AppVersion = "2.1.0";
     private const string BuildLabel = "PHoeniX"; //oznaczenie identyfikatora, zmiana może wszystko zepsuć xdd
     private const string EnginePatch = "QUPA"; // tak samo jak u góry
     private const int Protocol = 1;
@@ -28,11 +28,13 @@ public class CPHInline
     private const int MaxImportedScores = 25000;
     private const int MaxUserIdLength = 160;
     private const int MaxHistory = 100;
+    private const int MaxArchiveCleanupItems = 100;
     private const int MaxSnapshotBytes = 32 * 1024 * 1024;
     private static readonly bool AnnounceRoundEventsInChat = false; // zmiana na true włącza wiadomosci na czacie twitch, dotycząca przebiegu rundy
     private static readonly object StateLock = String.Intern("LukiQuizEngine.v2.transaction");
     private static readonly Dictionary<Type,Dictionary<string,PropertyInfo>> propertyCache=new Dictionary<Type,Dictionary<string,PropertyInfo>>();
     private static readonly Regex VoteRegex = new Regex(@"^!(1[0-2]|[1-9])$", RegexOptions.CultureInvariant);
+    private readonly Dictionary<string,ArchiveCleanupPlan> archiveCleanupPlans = new Dictionary<string,ArchiveCleanupPlan>();
     private Timer roundTimer;
     private Root quizData;
     private string storedStateJson;
@@ -48,6 +50,7 @@ public class CPHInline
     private bool resetStateSaved;
     private ArchiveSaveResult archiveSave;
     private ArchiveRestoreResult restoreArchive;
+    private ArchiveCleanupResult archiveCleanup;
     private int archiveResultRevision = -1;
     private static readonly string[] ArgumentNames = {
         "quizOperation","lqeMutation","lqeRequestId","lqeConfirm","lqeScoreUserId","lqeScoreUserName","lqeNewPoints",
@@ -86,7 +89,7 @@ public class CPHInline
         lock (StateLock) {
             requestArgs = captured; requestId = ""; requestOperation = ""; requestFailed = false;
             resetArchive = null; resetResultRevision = -1; resetStateSaved = false;
-            archiveSave = null; restoreArchive = null; archiveResultRevision = -1;
+            archiveSave = null; restoreArchive = null; archiveCleanup = null; archiveResultRevision = -1;
             string op = "";
             try {
                 if (!String.IsNullOrWhiteSpace(wire)) {
@@ -119,14 +122,14 @@ public class CPHInline
                     Broadcast(new {type="quiz-result",requestId=requestId,build=BuildLabel,operation=op,ok=true,revision=revision,archiveFolder=new {status="opened",path=directory}});
                     return true;
                 }
-                if(new[]{"savearchive","listarchives","previewarchive","restorearchive","statusarchive"}.Contains(op)) {
+                if(new[]{"savearchive","listarchives","previewarchive","restorearchive","statusarchive","previewarchivecleanup","deletearchives"}.Contains(op)) {
                     Require(!String.IsNullOrWhiteSpace(wire) && String.IsNullOrWhiteSpace(ReadHostArg("message")) && String.IsNullOrWhiteSpace(ReadHostArg("userId")),"Archiwum rankingu jest dostępne wyłącznie przez panel.");
                     // Reading an archive must not expire a round or run a state migration.
                     var previousData=quizData;string previousRaw=storedStateJson;
                     try {
                         quizData=ReadArchiveState();
                         HandleArchiveOperation(op);
-                        Broadcast(new {type="quiz-result",requestId=requestId,build=BuildLabel,operation=op,ok=true,revision=archiveResultRevision>=0?archiveResultRevision:quizData.Revision,archiveSave=archiveSave,restoreArchive=restoreArchive});
+                        Broadcast(new {type="quiz-result",requestId=requestId,build=BuildLabel,operation=op,ok=true,revision=archiveResultRevision>=0?archiveResultRevision:quizData.Revision,archiveSave=archiveSave,restoreArchive=restoreArchive,archiveCleanup=archiveCleanup});
                     }finally {
                         if(op!="restorearchive"||restoreArchive==null||restoreArchive.replayed){quizData=previousData;storedStateJson=previousRaw;}
                     }
@@ -151,7 +154,7 @@ public class CPHInline
         }
         return true;
     }
-    private static bool IsReadOperation(string op) { return new[]{"sync","tick","getscores","getdata","diagnostics","exportbackup","exportbank","previewbackup","previewbank","openarchivefolder","listarchives","previewarchive","statusarchive"}.Contains(op); }
+    private static bool IsReadOperation(string op) { return new[]{"sync","tick","getscores","getdata","diagnostics","exportbackup","exportbank","previewbackup","previewbank","openarchivefolder","listarchives","previewarchive","statusarchive","previewarchivecleanup"}.Contains(op); }
     private string SafeError(Exception ex) { return ex is InvalidOperationException ? ex.Message : "Nieprawidłowe dane lub błąd zapisu. Sprawdź Diagnostykę."; }
     private string ReadHostArg(string name) {
         object value;
@@ -239,6 +242,7 @@ public class CPHInline
         if(strictSchema || type==typeof(Root) || type==typeof(Backup) || type==typeof(BankEnvelope)) {
             foreach(string required in props.Keys) {
                 if(type==typeof(RankingArchiveDocument)&&new[]{"Name","ArchiveType","BaseScores","TotalPoints","ContentHash"}.Contains(required))continue;
+                if(type==typeof(Settings)&&new[]{"PanelLanguage","OverlayLanguage","SyncLanguage","VoteParsing","ArchiveRetention"}.Contains(required))continue;
                 Require(source.ContainsKey(required), "Niepełny schemat: "+required);
             }
         }
@@ -292,6 +296,11 @@ public class CPHInline
     }
     private void ValidateSettings(Settings s) {
         Require(s != null && s.Keys != null && s.Overlay != null,"Puste ustawienia.");
+        Require(new[]{"pl","en"}.Contains(s.PanelLanguage)&&new[]{"pl","en"}.Contains(s.OverlayLanguage),"Nieprawidłowy język interfejsu.");
+        Require(new[]{"STRICT","WHITESPACE","ATTACHED"}.Contains(s.VoteParsing),"Nieprawidłowy tryb rozpoznawania głosów.");
+        Require(s.ArchiveRetention!=null,"Brak zasad czyszczenia archiwów.");
+        ValidateRange(s.ArchiveRetention.MaxCount,1,1000,"Maksymalna liczba archiwów");
+        ValidateRange(s.ArchiveRetention.MaxAgeDays,1,36500,"Maksymalny wiek archiwów");
         ValidateRange(s.UserCooldown,0,3600,"Cooldown user"); ValidateRange(s.GlobalCooldown,0,3600,"Cooldown global");
         var o=s.Overlay; Require(new[]{"FULL","COMPACT","MINIMAL","NO_LEADERBOARD"}.Contains(o.Layout),"Layout.");
         Require(Regex.IsMatch(o.Accent ?? "",@"^#[0-9a-fA-F]{6}$"),"Kolor HEX."); ValidateRange(o.Scale,40,150,"Skala"); ValidateRange(o.X,0,1800,"X"); ValidateRange(o.Y,0,1000,"Y");
@@ -557,6 +566,7 @@ public class CPHInline
             resetResultRevision=quizData.Revision;
             BroadcastState();BroadcastScores();BroadcastData();
             CPH.LogInfo("[LukiQuiz V2] RESET rankingu zapisany, revision="+quizData.Revision+", scores="+quizData.Scores.Count);
+            TryAutomaticArchiveCleanup(directory,resetArchive==null?"":resetArchive.archiveId);
         }
     }
     public class ArchiveResetResult {
@@ -616,6 +626,35 @@ public class CPHInline
         public int users {get;set;}
         public long? totalPoints {get;set;}
         public string appVersion {get;set;}
+        public long sizeBytes {get;set;}
+    }
+    public class ArchiveCleanupRequest {
+        public string mode {get;set;}="manual";
+        public List<string> archiveIds {get;set;}=new List<string>();
+    }
+    public class ArchiveCleanupItem {
+        public string archiveId {get;set;}
+        public string archiveHash {get;set;}
+        public string name {get;set;}
+        public string type {get;set;}
+        public long sizeBytes {get;set;}
+        public long createdAt {get;set;}
+    }
+    public class ArchiveCleanupPlan {
+        public string planId {get;set;}
+        public string planHash {get;set;}
+        public long expiresAt {get;set;}
+        public List<ArchiveCleanupItem> items {get;set;}=new List<ArchiveCleanupItem>();
+        public int protectedCount {get;set;}
+        public int qualifiedCount {get;set;}
+        public bool limited {get;set;}
+    }
+    public class ArchiveCleanupResult {
+        public string planId {get;set;}
+        public int deletedCount {get;set;}
+        public long deletedBytes {get;set;}
+        public int failedCount {get;set;}
+        public bool automatic {get;set;}
     }
     public class RankingOperationIntent {
         public int Schema {get;set;}=1;
@@ -693,7 +732,7 @@ public class CPHInline
     private void ValidateRankingArchive(RankingArchiveDocument archive,string path) {
         Require(archive!=null&&archive.Format=="LukiQuizRankingArchive"&&archive.Schema==1&&archive.Scores!=null&&archive.Teams!=null&&archive.Members!=null&&archive.TeamScores!=null&&archive.BaseTeamScores!=null,"Niepełne archiwum rankingu.");
         Require(IsRankingArchiveId(archive.ArchiveId)&&archive.ArchiveId==Path.GetFileNameWithoutExtension(path)&&archive.Users==archive.Scores.Count,"Niepoprawne ID lub liczba wyników archiwum.");
-        Require(new[]{"2.0.0","2.0.1","2.0.2"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
+        Require(new[]{"2.0.0","2.0.1","2.0.2","2.1.0"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
         ValidateRange(archive.CreatedAt,1,4102444800000L,"Data archiwum");ValidateRange(archive.Epoch,0,Int32.MaxValue-1,"Archive epoch");ValidateRange(archive.Revision,0,Int32.MaxValue-1,"Archive revision");
         DateTime created;Require(DateTime.TryParse(archive.CreatedAtUtc,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out created)&&created.Kind==DateTimeKind.Utc&&Math.Abs((created-new DateTime(1970,1,1,0,0,0,DateTimeKind.Utc)).TotalMilliseconds-archive.CreatedAt)<2000,"Nieprawidłowa data archiwum.");
         Require(Regex.IsMatch(archive.SourceStateHash??"",@"^[a-f0-9]{64}$"),"Nieprawidłowy SourceStateHash archiwum.");
@@ -753,9 +792,10 @@ public class CPHInline
         return JToken.DeepEquals(JToken.FromObject(archive.Teams.OrderBy(x=>x.Id,StringComparer.Ordinal)),JToken.FromObject(quizData.Teams.OrderBy(x=>x.Id,StringComparer.Ordinal)))&&JToken.DeepEquals(JToken.FromObject(archive.Members.OrderBy(x=>x.Key,StringComparer.Ordinal)),JToken.FromObject(quizData.Members.OrderBy(x=>x.Key,StringComparer.Ordinal)));
     }
     private void HandleArchiveOperation(string op) {
-        string[] allowed=op=="savearchive"?new[]{"archiveName"}:op=="listarchives"?new[]{"search","offset","limit"}:op=="previewarchive"?new[]{"archiveId","offset","limit"}:op=="statusarchive"?new[]{"operationId"}:new[]{"archiveId","archiveHash","expectedRevision","confirmText"};
+        string[] allowed=op=="savearchive"?new[]{"archiveName"}:op=="listarchives"?new[]{"search","offset","limit","sort","archiveType"}:op=="previewarchive"?new[]{"archiveId","offset","limit"}:op=="statusarchive"?new[]{"operationId"}:op=="previewarchivecleanup"?new[]{"payloadJson"}:op=="deletearchives"?new[]{"planId","planHash","confirmText"}:new[]{"archiveId","archiveHash","expectedRevision","confirmText"};
         Require(requestArgs.Keys.All(allowed.Contains),"Nieznany argument archiwum rankingu.");
-        string directory=SafeArchiveDirectory(op=="savearchive"||op=="restorearchive");
+        if(op=="previewarchivecleanup"||op=="deletearchives")EnsureRoundFinished();
+        string directory=SafeArchiveDirectory(op=="savearchive"||op=="restorearchive"||op=="previewarchivecleanup"||op=="deletearchives");
         if(op=="listarchives"){ListRankingArchives(directory);return;}
         if(op=="previewarchive") {
             string hash;var archive=ReadManagedArchive(directory,GetStringArg("archiveId"),out hash);int offset=GetIntArg("offset",0),limit=GetIntArg("limit",100);ValidateRange(offset,0,25000,"Offset");ValidateRange(limit,1,100,"Limit");
@@ -768,7 +808,10 @@ public class CPHInline
         using(var transaction=new FileStream(lockPath,FileMode.OpenOrCreate,FileAccess.ReadWrite,FileShare.None)) {
             CheckArchiveFilePath(lockPath);
             Require(String.Equals(CPH.GetGlobalVar<string>(DataVariable,true),storedStateJson,StringComparison.Ordinal),"Stan zmienił się. Odśwież ranking i powtórz potwierdzenie.");
-            if(op=="savearchive")SaveRankingArchive(directory);else RestoreRankingArchive(directory);
+            if(op=="previewarchivecleanup")PreviewArchiveCleanup(directory);
+            else if(op=="deletearchives")DeleteArchiveCleanupPlan(directory);
+            else if(op=="savearchive"){SaveRankingArchive(directory);TryAutomaticArchiveCleanup(directory,archiveSave==null?"":archiveSave.archiveId);}
+            else RestoreRankingArchive(directory);
         }
     }
     private void SaveRankingArchive(string directory) {
@@ -777,6 +820,7 @@ public class CPHInline
         if(File.Exists(path)) {
             var previous=ReadRankingIntent(path,requestId);Require(previous.Operation=="savearchive"&&previous.ArgumentsHash==argsHash,"ID żądania zostało już użyte dla innej operacji.");
             if(!File.Exists(SafeArchivePath(directory,previous.ArchiveId))) {
+                Require(!File.Exists(ArchiveDeletedMarker(directory,previous.ArchiveId)),"Archiwum zostało świadomie usunięte. Nie odtworzono go przy ponowieniu starego żądania.");
                 Require(ArchiveHash(storedStateJson)==previous.SourceHash&&quizData.Epoch==previous.TargetEpoch&&quizData.Revision==previous.TargetRevision&&quizData.Scores.Count==previous.Users,"Zapis archiwum został przerwany, a stan źródłowy zmienił się. Nie odtworzono wcześniejszego pliku. Wykonaj świadomie nowy zapis jako nowe żądanie z nowym ID.");
                 var recovered=CreateManagedArchive(directory,"manual",previous.ArchiveName,previous.ArchiveId);
                 Require(ArchiveHash(JsonConvert.SerializeObject(recovered))==previous.ArchiveHash,"Nie można dokładnie odtworzyć przerwanego zapisu ze starszej intencji. Nie zapisano archiwum. Wykonaj świadomie nowy zapis jako nowe żądanie z nowym ID.");
@@ -784,11 +828,12 @@ public class CPHInline
                 PublishManagedArchive(directory,recovered);
             }
             string hash;var existing=ReadManagedArchive(directory,previous.ArchiveId,out hash);Require(hash==previous.ArchiveHash&&existing.SourceStateHash==previous.SourceHash&&existing.Users==previous.Users&&ArchiveInfo(existing).name==previous.ArchiveName&&ArchiveType(existing)=="manual","Nie można potwierdzić wcześniejszego zapisu. Archiwum zmieniło się.");
+            WriteArchiveFile(path+".committed.json",JsonConvert.SerializeObject(previous));
             archiveSave=new ArchiveSaveResult{archiveId=existing.ArchiveId,name=ArchiveInfo(existing).name,users=existing.Users,replayed=true};return;
         }
         var archive=CreateManagedArchive(directory,"manual",name);string json=JsonConvert.SerializeObject(archive);
         var intent=new RankingOperationIntent{RequestId=requestId,Operation="savearchive",ArgumentsHash=argsHash,ArchiveId=archive.ArchiveId,ArchiveHash=ArchiveHash(json),ArchiveName=archive.Name,Users=archive.Users,SourceHash=archive.SourceStateHash,TargetEpoch=quizData.Epoch,TargetRevision=quizData.Revision};
-        WriteArchiveFile(path,JsonConvert.SerializeObject(intent));PublishManagedArchive(directory,archive);
+        WriteArchiveFile(path,JsonConvert.SerializeObject(intent));PublishManagedArchive(directory,archive);WriteArchiveFile(path+".committed.json",JsonConvert.SerializeObject(intent));
         archiveSave=new ArchiveSaveResult{archiveId=archive.ArchiveId,name=archive.Name,users=archive.Users};
     }
     private ArchiveRestoreResult RestoreResult(RankingOperationIntent intent,string status) {
@@ -836,26 +881,131 @@ public class CPHInline
         BroadcastState();BroadcastScores();BroadcastData();
     }
     private void ListRankingArchives(string directory) {
-        string search=GetStringArg("search").Trim();ValidateText(search,0,80,"Wyszukiwanie");int offset=GetIntArg("offset",0),limit=GetIntArg("limit",25);ValidateRange(offset,0,1000,"Offset");ValidateRange(limit,1,50,"Limit");
-        var items=new List<ArchiveMetadata>();int scanned=0,skipped=0;long bytes=0;bool truncated=false;
-        // Keep a bounded set of the newest filenames before the byte budget is applied.
-        var newest=new SortedSet<string>(StringComparer.Ordinal);var watch=System.Diagnostics.Stopwatch.StartNew();
-        if(Directory.Exists(directory))foreach(string path in Directory.EnumerateFiles(directory,"*.json",SearchOption.TopDirectoryOnly)) {
+        string search=GetStringArg("search").Trim();ValidateText(search,0,80,"Wyszukiwanie");int offset=GetIntArg("offset",0),limit=GetIntArg("limit",25);ValidateRange(offset,0,10000,"Offset");ValidateRange(limit,1,50,"Limit");
+        string sort=GetStringArg("sort");if(sort=="")sort="date-desc";Require(new[]{"date-desc","date-asc","size-desc","size-asc"}.Contains(sort),"Nieprawidłowe sortowanie archiwów.");
+        string archiveType=GetStringArg("archiveType");if(archiveType=="")archiveType="all";Require(new[]{"all","automatic","manual","safety"}.Contains(archiveType),"Nieprawidłowy filtr archiwów.");
+        bool truncated;int skipped;var catalog=ScanArchiveMetadata(directory,out truncated,out skipped);
+        var filtered=catalog.Where(x=>(archiveType=="all"||x.type==archiveType)&&x.name.IndexOf(search,StringComparison.OrdinalIgnoreCase)>=0);
+        var sorted=(sort=="date-asc"?filtered.OrderBy(x=>x.createdAt):sort=="size-asc"?filtered.OrderBy(x=>x.sizeBytes):sort=="size-desc"?filtered.OrderByDescending(x=>x.sizeBytes):filtered.OrderByDescending(x=>x.createdAt)).ThenBy(x=>x.archiveId,StringComparer.Ordinal).ToList();
+        Broadcast(new{type="quiz-archives",appVersion=AppVersion,items=sorted.Skip(offset).Take(limit).ToList(),offset=offset,limit=limit,total=sorted.Count,hasMore=offset+limit<sorted.Count,truncated=truncated,skipped=skipped,archiveCount=catalog.Count,totalBytes=catalog.Sum(x=>x.sizeBytes),sort=sort,archiveType=archiveType});
+    }
+    private List<ArchiveMetadata> ScanArchiveMetadata(string directory,out bool truncated,out int skipped) {
+        var items=new List<ArchiveMetadata>();skipped=0;truncated=false;long bytes=0;int scanned=0;
+        var watch=System.Diagnostics.Stopwatch.StartNew();
+        if(!Directory.Exists(directory))return items;
+        CheckArchiveDirectoryPath(directory);
+        foreach(string path in Directory.EnumerateFiles(directory,"*.json",SearchOption.TopDirectoryOnly)) {
             string id=Path.GetFileNameWithoutExtension(path);if(!IsRankingArchiveId(id))continue;
-            Require(++scanned<=100000&&watch.ElapsedMilliseconds<5000,"Katalog zawiera zbyt wiele archiwów, aby bezpiecznie wyświetlić listę.");
-            string key=id.Substring(id.IndexOf('-')+1,23)+"|"+id;newest.Add(key);
-            if(newest.Count>1000){newest.Remove(newest.Min);truncated=true;}
-        }
-        foreach(string key in newest.Reverse()) {
-            string id=key.Substring(24),path=Path.Combine(directory,id+".json");
+            if(++scanned>10000||watch.ElapsedMilliseconds>=5000){truncated=true;break;}
             try {
                 SafeArchivePath(directory,id);long size=new FileInfo(path).Length;if(size<=0||size>MaxBytes){skipped++;continue;}
                 if(bytes+size>64L*1024*1024){truncated=true;break;}bytes+=size;
-                var metadata=ReadArchiveMetadata(path);if(metadata.name.IndexOf(search,StringComparison.OrdinalIgnoreCase)>=0)items.Add(metadata);
+                var metadata=ReadArchiveMetadata(path);metadata.sizeBytes=size;items.Add(metadata);
             }catch(Exception){skipped++;}
         }
-        var sorted=items.OrderByDescending(x=>x.createdAt).ThenBy(x=>x.archiveId,StringComparer.Ordinal).ToList();
-        Broadcast(new{type="quiz-archives",appVersion=AppVersion,items=sorted.Skip(offset).Take(limit).ToList(),offset=offset,limit=limit,total=sorted.Count,hasMore=offset+limit<sorted.Count,truncated=truncated,skipped=skipped});
+        return items;
+    }
+    private HashSet<string> PendingArchiveReferences(string directory) {
+        var references=new HashSet<string>(StringComparer.Ordinal);int inspected=0;long readBytes=0;var watch=System.Diagnostics.Stopwatch.StartNew();
+        foreach(string name in new[]{".resets",".ranking-operations"}) {
+            string journal=Path.Combine(directory,name);CheckArchiveDirectoryPath(journal);if(!Directory.Exists(journal))continue;
+            foreach(string path in Directory.EnumerateFiles(journal,"*.json",SearchOption.TopDirectoryOnly)) {
+                Require(++inspected<=10000&&watch.ElapsedMilliseconds<5000,"Zbyt wiele potwierdzeń operacji. Czyszczenie jest zablokowane.");
+                if(path.EndsWith(".committed.json",StringComparison.Ordinal))continue;
+                CheckArchiveFilePath(path);CheckArchiveFilePath(path+".committed.json");
+                long journalSize=new FileInfo(path).Length;Require(journalSize<=65536&&(readBytes+=journalSize)<=64L*1024*1024,"Nieprawidłowe potwierdzenie operacji. Czyszczenie jest zablokowane.");
+                string raw=File.ReadAllText(path,new UTF8Encoding(false,true));
+                if(File.Exists(path+".committed.json")) {
+                    long committedSize=new FileInfo(path+".committed.json").Length;Require(committedSize<=65536&&(readBytes+=committedSize)<=64L*1024*1024&&File.ReadAllText(path+".committed.json",new UTF8Encoding(false,true))==raw,"Niezgodne potwierdzenie operacji. Czyszczenie jest zablokowane.");continue;
+                }
+                JObject value;try{value=JObject.Parse(raw);}catch{throw new InvalidOperationException("Nieprawidłowe potwierdzenie operacji. Czyszczenie jest zablokowane.");}
+                // v2.0.2 manual saves have no completion marker. Their verified published file is their completion evidence.
+                if((string)value["Operation"]=="savearchive"&&IsRankingArchiveId((string)value["ArchiveId"])) {
+                    string savedPath=SafeArchivePath(directory,(string)value["ArchiveId"]);
+                    if(File.Exists(savedPath))Require((readBytes+=new FileInfo(savedPath).Length)<=64L*1024*1024,"Zbyt wiele danych potwierdzeń operacji. Czyszczenie jest zablokowane.");
+                    string savedHash;try{ReadManagedArchive(directory,(string)value["ArchiveId"],out savedHash);if(savedHash==(string)value["ArchiveHash"])continue;}catch { }
+                }
+                foreach(string id in new[]{(string)value["ArchiveId"],(string)value["BackupArchiveId"],value["Archive"]==null?null:(string)value["Archive"]["archiveId"]})if(!String.IsNullOrEmpty(id)){Require(IsRankingArchiveId(id),"Nieprawidłowe ID w potwierdzeniu operacji.");references.Add(id);}
+            }
+        }
+        return references;
+    }
+    private ArchiveCleanupPlan BuildArchiveCleanupPlan(string directory,ArchiveCleanupRequest request,string preserveId) {
+        Require(request!=null&&new[]{"manual","retention"}.Contains(request.mode)&&request.archiveIds!=null&&request.archiveIds.Count<=1000,"Nieprawidłowy wybór archiwów do usunięcia.");
+        bool truncated;int skipped;var catalog=ScanArchiveMetadata(directory,out truncated,out skipped);
+        Require(!truncated&&skipped==0,"Lista archiwów jest niepełna lub zawiera uszkodzone pliki. Czyszczenie jest zablokowane.");
+        var protectedIds=PendingArchiveReferences(directory);if(!String.IsNullOrEmpty(preserveId))protectedIds.Add(preserveId);
+        if(catalog.Count>0)protectedIds.Add(catalog.OrderByDescending(x=>x.createdAt).ThenBy(x=>x.archiveId,StringComparer.Ordinal).First().archiveId);
+        var selected=new HashSet<string>(StringComparer.Ordinal);
+        if(request.mode=="manual") {
+            foreach(string id in request.archiveIds){Require(IsRankingArchiveId(id)&&selected.Add(id),"Nieprawidłowe lub powtórzone ID archiwum.");Require(catalog.Any(x=>x.archiveId==id),"Wybrane archiwum nie istnieje.");}
+            Require(!selected.Any(protectedIds.Contains),"Wybrano najnowszą kopię rankingu lub archiwum używane przez niezakończoną operację. Zachowaj tę kopię.");
+        } else {
+            var policy=quizData.Settings.ArchiveRetention;long cutoff=Now()-policy.MaxAgeDays*86400000L;
+            var eligible=new List<ArchiveMetadata>();
+            foreach(var group in catalog.GroupBy(x=>x.type)) {
+                if(group.Key=="manual"&&!policy.IncludeManual||group.Key=="safety"&&!policy.IncludeSafety)continue;
+                var ordered=group.OrderByDescending(x=>x.createdAt).ThenBy(x=>x.archiveId,StringComparer.Ordinal).ToList();
+                if(ordered.Count>0)protectedIds.Add(ordered[0].archiveId);
+                eligible.AddRange(ordered);
+            }
+            foreach(var item in eligible.OrderByDescending(x=>x.createdAt).ThenBy(x=>x.archiveId,StringComparer.Ordinal).Select((value,index)=>new{value,index}))if((item.index>=policy.MaxCount||item.value.createdAt<cutoff)&&!protectedIds.Contains(item.value.archiveId))selected.Add(item.value.archiveId);
+        }
+        var plan=new ArchiveCleanupPlan{planId=Id(),expiresAt=Now()+300000,protectedCount=catalog.Count(x=>protectedIds.Contains(x.archiveId)),qualifiedCount=selected.Count,limited=selected.Count>MaxArchiveCleanupItems};long readBytes=0;
+        foreach(var metadata in catalog.Where(x=>selected.Contains(x.archiveId)).OrderBy(x=>x.createdAt).ThenBy(x=>x.archiveId,StringComparer.Ordinal).Take(MaxArchiveCleanupItems)) {
+            Require((readBytes+=metadata.sizeBytes)<=64L*1024*1024,"Wybrano zbyt wiele danych do jednego czyszczenia.");
+            string hash;var archive=ReadManagedArchive(directory,metadata.archiveId,out hash);
+            plan.items.Add(new ArchiveCleanupItem{archiveId=archive.ArchiveId,archiveHash=hash,name=metadata.name,type=metadata.type,sizeBytes=metadata.sizeBytes,createdAt=metadata.createdAt});
+        }
+        plan.planHash=ArchiveHash(JsonConvert.SerializeObject(plan));return plan;
+    }
+    private void PreviewArchiveCleanup(string directory) {
+        var request=Read<ArchiveCleanupRequest>(GetStringArg("payloadJson"));var plan=BuildArchiveCleanupPlan(directory,request,"");
+        foreach(string key in archiveCleanupPlans.Where(x=>x.Value.expiresAt<Now()).Select(x=>x.Key).ToList())archiveCleanupPlans.Remove(key);
+        Require(archiveCleanupPlans.Count<20,"Zbyt wiele aktywnych podglądów czyszczenia. Poczekaj na ich wygaśnięcie.");archiveCleanupPlans[plan.planId]=plan;
+        Broadcast(new{type="quiz-archive-cleanup-preview",build=BuildLabel,appVersion=AppVersion,operation="previewarchivecleanup",revision=quizData.Revision,requestId=requestId,planId=plan.planId,planHash=plan.planHash,expiresAt=plan.expiresAt,items=plan.items,totalBytes=plan.items.Sum(x=>x.sizeBytes),protectedCount=plan.protectedCount,qualifiedCount=plan.qualifiedCount,limited=plan.limited});
+    }
+    private string ArchiveDeletedMarker(string directory,string id) {
+        string journal=Path.Combine(directory,".cleanup");CheckArchiveDirectoryPath(journal);
+        string path=Path.Combine(journal,"deleted-"+ArchiveHash(id)+".json");CheckArchiveFilePath(path);return path;
+    }
+    private ArchiveCleanupResult ApplyArchiveCleanupPlan(string directory,ArchiveCleanupPlan plan,bool automatic) {
+        Require(plan.expiresAt>=Now(),"Podgląd czyszczenia wygasł. Przygotuj go ponownie.");
+        var selected=plan.items.Select(x=>x.archiveId).ToList();
+        // A fresh complete catalog and full hash validation precede every deletion.
+        var fresh=BuildArchiveCleanupPlan(directory,new ArchiveCleanupRequest{mode="manual",archiveIds=selected},"");
+        Require(fresh.items.Count==plan.items.Count&&fresh.items.All(x=>plan.items.Any(p=>p.archiveId==x.archiveId&&p.archiveHash==x.archiveHash&&p.sizeBytes==x.sizeBytes)),"Archiwum zmieniło się od podglądu. Przygotuj go ponownie.");
+        bool truncated;int skipped;var catalog=ScanArchiveMetadata(directory,out truncated,out skipped);
+        var survivor=catalog.Where(x=>!selected.Contains(x.archiveId)).OrderByDescending(x=>x.createdAt).FirstOrDefault();
+        Require(plan.items.Count==0||survivor!=null,"Nie można usunąć wszystkich kopii rankingu.");
+        string survivorHash;if(survivor!=null)ReadManagedArchive(directory,survivor.archiveId,out survivorHash);
+        var result=new ArchiveCleanupResult{planId=plan.planId,automatic=automatic};
+        string staging=Path.Combine(directory,".cleanup");CheckArchiveDirectoryPath(staging);Directory.CreateDirectory(staging);CheckArchiveDirectoryPath(staging);
+        foreach(var item in plan.items) {
+            string path=SafeArchivePath(directory,item.archiveId),temporary=Path.Combine(staging,"pending-"+plan.planId+"-"+ArchiveHash(item.archiveId)+".json");
+            try {
+                CheckArchiveFilePath(temporary);Require(!File.Exists(temporary),"Plik roboczy czyszczenia już istnieje.");
+                string currentHash;ReadManagedArchive(directory,item.archiveId,out currentHash);Require(currentHash==item.archiveHash,"Archiwum zmieniło się podczas czyszczenia.");
+                WriteArchiveFile(ArchiveDeletedMarker(directory,item.archiveId),JsonConvert.SerializeObject(new{schema=1,archiveId=item.archiveId,archiveHash=item.archiveHash,deletedAt=Now()}));
+                CheckArchiveFilePath(path);CheckArchiveFilePath(temporary);File.Move(path,temporary);
+                CheckArchiveFilePath(temporary);Require(ArchiveHash(File.ReadAllText(temporary,new UTF8Encoding(false,true)))==item.archiveHash,"Plik zmienił się podczas przenoszenia do usunięcia.");
+                File.Delete(temporary);result.deletedCount++;result.deletedBytes+=item.sizeBytes;
+            }catch(Exception) {
+                result.failedCount++;
+                try{CheckArchiveFilePath(temporary);CheckArchiveFilePath(path);if(File.Exists(temporary)&&!File.Exists(path))File.Move(temporary,path);string restoredHash;if(File.Exists(path)){ReadManagedArchive(directory,item.archiveId,out restoredHash);if(restoredHash==item.archiveHash){string marker=ArchiveDeletedMarker(directory,item.archiveId);CheckArchiveFilePath(marker);if(File.Exists(marker))File.Delete(marker);}}}catch{CPH.LogError("[LukiQuiz V2] Cleanup recovery required for "+item.archiveId);}
+            }
+        }
+        return result;
+    }
+    private void DeleteArchiveCleanupPlan(string directory) {
+        Confirm("USUN ARCHIWA");ArchiveCleanupPlan plan;string id=GetStringArg("planId");
+        Require(archiveCleanupPlans.TryGetValue(id,out plan)&&plan.planHash==GetStringArg("planHash"),"Brak zgodnego podglądu czyszczenia. Przygotuj go ponownie.");
+        archiveCleanup=ApplyArchiveCleanupPlan(directory,plan,false);archiveCleanupPlans.Remove(id);
+    }
+    private void TryAutomaticArchiveCleanup(string directory,string preserveId) {
+        if(!quizData.Settings.ArchiveRetention.Enabled||quizData.Current!=null&&(quizData.Current.Status=="open"||quizData.Current.Status=="locked"))return;
+        try{var plan=BuildArchiveCleanupPlan(directory,new ArchiveCleanupRequest{mode="retention"},preserveId);if(plan.items.Count>0){var result=ApplyArchiveCleanupPlan(directory,plan,true);CPH.LogInfo("[LukiQuiz V2] Automatic archive cleanup deleted="+result.deletedCount+" failed="+result.failedCount);}}
+        catch(Exception ex){CPH.LogWarn("[LukiQuiz V2] Automatic archive cleanup skipped: "+SafeError(ex));}
     }
     private ArchiveMetadata ReadArchiveMetadata(string path) {
         // Skip result dictionaries instead of materializing every archived ranking during a refresh.
@@ -878,7 +1028,7 @@ public class CPHInline
         var archive=scalars.ToObject<RankingArchiveDocument>();Require(archive.ArchiveId==Path.GetFileNameWithoutExtension(path)&&IsRankingArchiveId(archive.ArchiveId),"Niepoprawne ID archiwum.");
         ValidateRange(archive.Users,0,25000,"Liczba wyników");ValidateRange(archive.CreatedAt,1,4102444800000L,"Data archiwum");ValidateRange(archive.Epoch,0,Int32.MaxValue-1,"Epoch archiwum");ValidateRange(archive.Revision,0,Int32.MaxValue-1,"Revision archiwum");
         DateTime created;Require(DateTime.TryParse(archive.CreatedAtUtc,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out created)&&created.Kind==DateTimeKind.Utc&&Math.Abs((created-new DateTime(1970,1,1,0,0,0,DateTimeKind.Utc)).TotalMilliseconds-archive.CreatedAt)<2000,"Nieprawidłowa data archiwum.");
-        Require(new[]{"2.0.0","2.0.1","2.0.2"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
+        Require(new[]{"2.0.0","2.0.1","2.0.2","2.1.0"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
         Require(Regex.IsMatch(archive.SourceStateHash??"",@"^[a-f0-9]{64}$"),"Nieprawidłowy SourceStateHash archiwum.");
         string type=ArchiveType(archive);Require(new[]{"automatic","manual","safety"}.Contains(type)&&archive.ArchiveId.StartsWith(type=="automatic"?"ranking-":type+"-",StringComparison.Ordinal),"Typ archiwum.");
         if(type=="automatic")Require(archive.ArchiveId.EndsWith("-"+archive.SourceStateHash,StringComparison.Ordinal),"Niezgodny SourceStateHash archiwum.");
@@ -1084,11 +1234,27 @@ public class CPHInline
     }
     private void HandleTwitchChat() {
         if(GetBoolArg("isInternal"))return;string message=GetStringArg("message").Trim();if(message.Length>1000)return;
-        var match=VoteRegex.Match(message);if(match.Success){RegisterVote(Int32.Parse(match.Groups[1].Value));return;}
+        int answer;if(TryParseVote(message,quizData.Settings.VoteParsing,quizData.Current==null?12:quizData.Current.Question.Options.Count,out answer)){RegisterVote(answer);return;}
         string id=GetStringArg("userId");if(id=="")id="name:"+GetStringArg("userName").ToLowerInvariant();
         if(message.Equals(PointsCommand,StringComparison.OrdinalIgnoreCase)&&AllowCommand("points",id)){SendUserPoints();return;}
         if(message.Equals(RankingCommand,StringComparison.OrdinalIgnoreCase)&&AllowCommand("ranking",id)){SendRanking();return;}
         if(message.StartsWith(AdminCommand,StringComparison.OrdinalIgnoreCase)&&(message.Length==AdminCommand.Length||Char.IsWhiteSpace(message[AdminCommand.Length]))&&IsChatAdmin())HandleAdminChatCommand(message);
+    }
+    private static bool TryParseVote(string raw,string mode,int answerCount,out int answer) {
+        answer=0;if(raw==null||raw.Length>1000||answerCount<1||answerCount>12)return false;
+        string message=raw.Trim();
+        if(message.Length<2||message[0]!='!'||message[1]<'1'||message[1]>'9')return false;
+        for(int i=0;i<message.Length;i++) {
+            char c=message[i];if(Char.IsLowSurrogate(c)||Char.IsHighSurrogate(c)&&(i+1>=message.Length||!Char.IsLowSurrogate(message[i+1])))return false;
+            var category=System.Globalization.CharUnicodeInfo.GetUnicodeCategory(message,i);
+            if(category==System.Globalization.UnicodeCategory.Format||(category==System.Globalization.UnicodeCategory.Control&&!Char.IsWhiteSpace(c)))return false;
+            if(Char.IsHighSurrogate(c))i++;
+        }
+        int end=1;while(end<message.Length&&message[end]>='0'&&message[end]<='9')end++;
+        if(end>3||!Int32.TryParse(message.Substring(1,end-1),out answer)||answer>answerCount||answer>12){answer=0;return false;}
+        if(end<message.Length&&System.Globalization.CharUnicodeInfo.GetUnicodeCategory(message,end)==System.Globalization.UnicodeCategory.DecimalDigitNumber){answer=0;return false;}
+        bool accepted=mode=="STRICT"?end==message.Length:mode=="WHITESPACE"?(end==message.Length||Char.IsWhiteSpace(message[end])):mode=="ATTACHED";
+        if(!accepted)answer=0;return accepted;
     }
     private void SendUserPoints() {
         string id=GetStringArg("userId");if(id=="")id="name:"+GetStringArg("userName").ToLowerInvariant();var scores=quizData.Scores;ScoreEntry e;
@@ -1103,7 +1269,7 @@ public class CPHInline
         if(op=="sync"||op=="tick"){BroadcastState();return;}
         if(op=="getscores"){BroadcastScores();return;}
         if(op=="getdata"){BroadcastData();return;}
-        if(op=="diagnostics"){Broadcast(new{type="quiz-diagnostics",requestId=requestId,appVersion=AppVersion,build=BuildLabel,enginePatch=EnginePatch,protocol=Protocol,stateSchema=2,backupSchema=1,rankingArchiveSchema=1,rankingArchiveManagement=true,openArchiveFolder=true,migration=quizData.Migration,aggregate="PARTIAL",autoFinalizeError=CurrentExpirationError(),rankingCount=quizData.Scores.Count,historyCount=quizData.History.Count,snapshotCount=LoadSnapshots().Count,revision=quizData.Revision});return;}
+        if(op=="diagnostics"){Broadcast(new{type="quiz-diagnostics",requestId=requestId,appVersion=AppVersion,build=BuildLabel,enginePatch=EnginePatch,protocol=Protocol,stateSchema=2,backupSchema=1,rankingArchiveSchema=1,rankingArchiveManagement=true,archiveCleanup=true,openArchiveFolder=true,migration=quizData.Migration,aggregate="PARTIAL",autoFinalizeError=CurrentExpirationError(),rankingCount=quizData.Scores.Count,historyCount=quizData.History.Count,snapshotCount=LoadSnapshots().Count,revision=quizData.Revision});return;}
         if(op=="start"){if(GetStringArg("payloadJson")!="")Start(Read<Question>(GetStringArg("payloadJson")));else StartQuiz(GetStringArg("question"),GetStringArg("answersJson"),GetIntArg("durationSeconds",0),true);return;}
         if(op=="lock"||op=="lockexpired"){LockQuiz(op=="lockexpired",true);return;}
         if(op=="reopen"){ReopenQuiz(true);return;}
@@ -1133,7 +1299,12 @@ public class CPHInline
             Snapshot("manual score correction"); var scores=Copy(quizData.Scores); scores[id].Points=p; scores[id].LastUpdatedAt=Now(); NewEpoch(scores); break;
         }
         case "restoreimportbackup":EnsureRoundFinished();Confirm("COFNIJ");Require(quizData.HasImportBackup,"Brak kopii importu.");Snapshot("undo CSV import");NewEpoch(Copy(quizData.ImportBackup));quizData.ImportBackup.Clear();quizData.HasImportBackup=false;break;
-        case "settings":var nextSettings=Read<Settings>(GetStringArg("payloadJson"));ValidateSettings(nextSettings);if(nextSettings.TeamMode!=quizData.Settings.TeamMode)EnsureRoundFinished();quizData.Settings=nextSettings;break;
+        case "settings": {
+            var nextSettings=Read<Settings>(GetStringArg("payloadJson"));ValidateSettings(nextSettings);
+            var oldPolicy=quizData.Settings.ArchiveRetention;var newPolicy=nextSettings.ArchiveRetention;
+            if(newPolicy.Enabled&&(!oldPolicy.Enabled||newPolicy.MaxCount<oldPolicy.MaxCount||newPolicy.MaxAgeDays<oldPolicy.MaxAgeDays||newPolicy.IncludeManual&&!oldPolicy.IncludeManual||newPolicy.IncludeSafety&&!oldPolicy.IncludeSafety))Confirm("USUN ARCHIWA");
+            if(nextSettings.TeamMode!=quizData.Settings.TeamMode)EnsureRoundFinished();quizData.Settings=nextSettings;break;
+        }
         case "savedraft":quizData.Draft=Read<Question>(GetStringArg("payloadJson"));ValidateQuestion(quizData.Draft,true);break;
         case "savequestion":case "savetemplate": {
             var q=Read<Question>(GetStringArg("payloadJson"));ValidateQuestion(q);var list=quizData.Bank;
@@ -1211,6 +1382,7 @@ public class CPHInline
         var options=r==null?new List<Option>():r.Question.Options;
         return new {
             type="quiz-state",appVersion=AppVersion,version=2,revision=quizData.Revision,serverNow=Now(),status=r==null?"idle":r.Status,
+            language=quizData.Settings.SyncLanguage?quizData.Settings.PanelLanguage:quizData.Settings.OverlayLanguage,panelLanguage=quizData.Settings.PanelLanguage,syncLanguage=quizData.Settings.SyncLanguage,
             visible=quizData.OverlayVisible&&(quizData.Podium||(r!=null&&r.Visible)),question=r==null?"":r.Question.Text,roundId=r==null?"":r.Id,mode=r==null?"QUIZ":r.Question.Mode,
             voting=r==null?"LIVE":r.Question.Voting,totalVotes=counts&&r!=null?r.Votes.Count:0,distribution=distribution,countsVisible=counts,
             options=options.Select((o,i)=>new{index=i+1,id=o.Id,text=o.Text,count=distribution?r.Votes.Count(v=>v.Value.OptionId==o.Id):0,correct=reveal&&o.Correct,partial=reveal&&!o.Correct&&o.Partial,points=reveal&&r.Question.Mode=="QUIZ"?(o.Points.HasValue?o.Points.Value:o.Correct?r.Question.FullPoints:o.Partial?r.Question.PartialPoints:0):0}).ToList(),
@@ -1756,9 +1928,14 @@ public class CPHInline
     public class TeamEnvelope {public List<Team> Teams {get;set;} public Dictionary<string,string> Members {get;set;}}
     public class BrowserEnvelope {public List<Question> Templates {get;set;} public Question Draft {get;set;}}
     public class SnapshotEntry {public string Id {get;set;}public long At {get;set;}public string Reason {get;set;}public string Data {get;set;}}
-    public class Backup {public string Format {get;set;}="LukiQuizBackup";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.0.2";public long CreatedAt {get;set;}public Root Data {get;set;}}
-    public class BankEnvelope {public string Format {get;set;}="LukiQuizBank";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.0.2";public long CreatedAt {get;set;}public List<Question> Questions {get;set;}public List<QuizSet> Sets {get;set;}}
+    public class Backup {public string Format {get;set;}="LukiQuizBackup";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.1.0";public long CreatedAt {get;set;}public Root Data {get;set;}}
+    public class BankEnvelope {public string Format {get;set;}="LukiQuizBank";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.1.0";public long CreatedAt {get;set;}public List<Question> Questions {get;set;}public List<QuizSet> Sets {get;set;}}
     public class Settings {
+        public string PanelLanguage {get;set;}="pl";
+        public string OverlayLanguage {get;set;}="pl";
+        public bool SyncLanguage {get;set;}=true;
+        public string VoteParsing {get;set;}="STRICT";
+        public ArchiveRetentionSettings ArchiveRetention {get;set;}=new ArchiveRetentionSettings();
         public bool TeamMode {get;set;}
         public bool Cooldowns {get;set;}=true;
         public int UserCooldown {get;set;}=10;
@@ -1766,6 +1943,13 @@ public class CPHInline
         public bool Shortcuts {get;set;}
         public Dictionary<string,string> Keys {get;set;}=new Dictionary<string,string>{{"start","Ctrl+Alt+KeyS"},{"lock","Ctrl+Alt+KeyL"},{"reveal","Ctrl+Alt+KeyR"},{"cancel","Ctrl+Alt+KeyC"},{"next","Ctrl+Alt+ArrowRight"},{"previous","Ctrl+Alt+ArrowLeft"},{"pause","Ctrl+Alt+KeyP"},{"addtime","Ctrl+Alt+ArrowUp"},{"subtracttime","Ctrl+Alt+ArrowDown"},{"visibility","Ctrl+Alt+KeyH"},{"podium","Ctrl+Alt+KeyO"}};
         public OverlaySettings Overlay {get;set;}=new OverlaySettings();
+    }
+    public class ArchiveRetentionSettings {
+        public bool Enabled {get;set;}
+        public int MaxCount {get;set;}=100;
+        public int MaxAgeDays {get;set;}=365;
+        public bool IncludeManual {get;set;}
+        public bool IncludeSafety {get;set;}
     }
     public class OverlaySettings {
         public string Layout {get;set;}="FULL";
