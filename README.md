@@ -1,5 +1,5 @@
 > [!NOTE]
-> This project is not affiliated with, endorsed by, or officially supported by Streamer.bot, Twitch, YouTube, or Kick. Streamer.bot, Twitch, YouTube, and Kick are trademarks or names of their respective owners. This project only uses features available in Streamer.bot and is provided as an independent community tool. 
+> Projekt nie jest powiązany ze Streamer.bot, Twitchem, YouTube ani Kick, nie jest przez nie sponsorowany ani oficjalnie wspierany. Streamer.bot, Twitch, YouTube i Kick są znakami towarowymi lub nazwami należącymi do ich odpowiednich właścicieli. Projekt wykorzystuje wyłącznie funkcje dostępne w Streamer.bot i jest udostępniany jako niezależne narzędzie społecznościowe.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -7,12 +7,16 @@
 
 **Aktualne wydanie: v2.1.0 BETA**
 
+**🌐 Język / Language:** [🇵🇱 Polski](README.md) | [🇬🇧 English](README_EN.md)
+
 - [READMElegacy.md](1.3.0/READMElegacy.md) - archiwalna dokumentacja starszej wersji **LukiQuizEngine v1.3.0**, dostępna w folderze [1.3.0](1.3.0/). Zawiera oryginalną instrukcję instalacji, konfiguracji i obsługi. Informacje oraz przykłady kodu dotyczą wersji 1.3.0 i nie powinny być stosowane bezpośrednio w aktualnej wersji 2.1.0 BETA.
 
-Lokalny silnik quizowy dla Streamer.bot z panelem WWW, overlayem OBS, głosowaniem na czacie Twitch, historią rund i trwałym rankingiem. Wystarczy jedna Action C# i jeden trigger wiadomości Twitch. Nie potrzebujesz Node.js, Pythona, osobnego programu `.exe`, bazy danych ani zewnętrznego hostingu.
+LukiQuizEngine to lokalny silnik quizowy dla Streamer.bot z panelem WWW, overlayem OBS, głosowaniem na czacie Twitch, historią rund i trwałym rankingiem.
+
+Do działania wystarczy **jedna Action C# i jeden trigger wiadomości Twitch**. Nie potrzebujesz Node.js, Pythona, osobnej aplikacji `.exe`, zewnętrznej bazy danych ani hostingu.
 
 > [!IMPORTANT]
-> Wersja **2.1.0 BETA** jest przeznaczona do testowania w lokalnym środowisku. Przed użyciem na transmisji zrób kopię danych i przetestuj instalację. Znane ograniczenie bezpieczeństwa HTTP `/DoAction` jest opisane w sekcji [Bezpieczeństwo i znane ograniczenia](#bezpieczeństwo-i-znane-ograniczenia).
+> Wersja **2.1.0 BETA** jest przeznaczona do testowania w lokalnym środowisku. Przed użyciem podczas transmisji wykonaj kopię istniejących danych i przetestuj instalację. Znane ograniczenie bezpieczeństwa HTTP `/DoAction` zostało opisane w sekcji [Bezpieczeństwo i znane ograniczenia](#bezpieczeństwo-i-znane-ograniczenia).
 
 ## Spis treści
 
@@ -21,80 +25,113 @@ Lokalny silnik quizowy dla Streamer.bot z panelem WWW, overlayem OBS, głosowani
 - [Instalacja od zera](#instalacja-od-zera)
 - [Pierwszy test](#pierwszy-test)
 - [Tryby panelu](#tryby-panelu)
+- [Ustawienia języka](#ustawienia-języka)
 - [Głosowanie i komendy Twitch](#głosowanie-i-komendy-twitch)
+- [Lokalny symulator quizu](#lokalny-symulator-quizu)
 - [Rankingi, archiwa i przywracanie](#rankingi-archiwa-i-przywracanie)
 - [Gdzie są przechowywane dane](#gdzie-są-przechowywane-dane)
 - [Bezpieczeństwo i znane ograniczenia](#bezpieczeństwo-i-znane-ograniczenia)
 - [Aktualizacja starszej instalacji](#aktualizacja-starszej-instalacji)
 - [Rozwiązywanie problemów](#rozwiązywanie-problemów)
+- [Opcjonalna modyfikacja głosowania z v1.3.0](#opcjonalna-modyfikacja-głosowania-z-v130)
 - [Historia projektu i licencja](#historia-projektu-i-licencja)
 
 ## Co potrafi
 
 ### Quiz, pytania i głosowanie
 
-- Pytania z **2-12 odpowiedziami**, w tym wieloma poprawnymi, z punktami przypisanymi do odpowiedzi.
-- Tryby punktowania `adjacent`, `manual`, `none` i `custom`, punkty częściowe oraz opcjonalne premie za szybkość.
+- Pytania z **2-12 odpowiedziami**, w tym wieloma poprawnymi, z możliwością przypisywania osobnych wartości punktowych.
+- Tryby punktowania `adjacent`, `manual`, `none` i `custom`, punkty częściowe oraz opcjonalne premie za szybkość odpowiedzi.
 - Reguły głosowania `LAST`, `FIRST` i `LIMITED`, z możliwością przeglądania i korygowania głosów w panelu.
-- Widoczność wyników przed ujawnieniem: `LIVE`, `COUNT_ONLY` i `HIDDEN`.
+- Tryby widoczności wyników przed ujawnieniem poprawnej odpowiedzi: `LIVE`, `COUNT_ONLY` i `HIDDEN`.
 - Tryb ankiety `POLL` bez przyznawania punktów do rankingu.
-- Losowanie kolejności odpowiedzi, zapis pytań, szablony i zestawy oraz import/eksport JSON.
+- Losowanie kolejności odpowiedzi, szablony pytań, zestawy pytań oraz import i eksport JSON.
+- Trzy konfigurowalne sposoby rozpoznawania głosów: `STRICT`, `WHITESPACE` i `ATTACHED`.
 
 ### Rundy i streaming
 
 - Ręczne sterowanie głosowaniem, timer, pauza, wznowienie, zmiany czasu i opcjonalne `AutoReveal`.
-- Historia rund, cofanie i przeliczanie kwalifikujących się wyników w bieżącej epoce punktacji.
-- Tryb drużynowy z przypisaniami widzów oraz osobnymi wynikami drużyn.
-- Overlay OBS: układy `FULL`, `COMPACT`, `MINIMAL` i `NO_LEADERBOARD`, personalizacja wyglądu, opcjonalne efekty i podium.
-- Skróty klawiaturowe i diagnostyka instalacji.
+- Historia rund z filtrowaniem, wyszukiwaniem, cofaniem i przeliczaniem kwalifikujących się wyników w bieżącej epoce punktacji.
+- Tryb drużynowy z przypisywaniem widzów i osobnymi wynikami drużyn.
+- Overlay OBS z układami `FULL`, `COMPACT`, `MINIMAL` i `NO_LEADERBOARD`.
+- Personalizacja wyglądu overlayu, opcjonalne efekty wizualne, dźwięki i podium.
+- Skróty klawiaturowe oraz diagnostyka instalacji.
+- Wbudowany lokalny symulator umożliwiający testowanie działania quizu bez modyfikowania prawdziwego rankingu.
+
+### Panel i interfejs
+
+- Trzy tryby interfejsu: `PROSTY`, `ADVANCED` i `LEGACY`.
+- Ulepszony wygląd przycisków, wizualne oznaczanie aktywnych elementów i czytelniejsze sterowanie.
+- Tryb Legacy inspirowany wyglądem LukiQuizEngine 1.3.0.
+- Obsługa języka polskiego i angielskiego w panelu oraz overlayu.
+- Opcjonalna synchronizacja języka panelu i overlayu.
+- Wspólny silnik quizu i te same dane we wszystkich trybach panelu.
 
 ### Ranking i archiwizacja
 
-- Trwała punktacja widzów i statystyki odpowiedzi.
-- Import/eksport rankingu CSV, pełny backup stanu oraz automatyczne snapshoty.
-- **Automatyczne archiwum rankingu przed resetem**, jeśli ranking zawiera dane do zachowania.
-- **Ręczny zapis rankingu bez resetowania punktów**, z opcjonalną nazwą archiwum.
-- **Przeglądanie, wyszukiwanie i podgląd historycznych rankingów** z poziomu panelu.
-- **Przywracanie wybranego rankingu** po potwierdzeniu `PRZYWROC` i utworzeniu kopii bezpieczeństwa aktualnych wyników.
-- Przycisk **Otwórz folder archiwów** otwierający lokalny katalog w Eksploratorze Windows.
+- Trwała punktacja widzów oraz statystyki odpowiedzi.
+- Import i eksport rankingu CSV, pełny backup stanu oraz automatyczne snapshoty.
+- **Automatyczne archiwum rankingu przed resetem**, jeżeli ranking zawiera dane do zachowania.
+- **Ręczny zapis rankingu bez resetowania punktów**, z możliwością nadania nazwy archiwum.
+- **Przeglądanie, wyszukiwanie, filtrowanie i podgląd archiwalnych rankingów** bezpośrednio w panelu.
+- **Przywracanie wybranego rankingu** po wpisaniu `PRZYWROC`, z wcześniejszym utworzeniem archiwum bezpieczeństwa aktualnych wyników.
+- Ręczne usuwanie wybranych archiwów po zatwierdzeniu operacji.
+- Opcjonalne automatyczne czyszczenie archiwów na podstawie ustawionych zasad przechowywania.
+- Przycisk **Otwórz folder archiwów**, uruchamiający lokalny katalog w Eksploratorze plików Windows.
 
 ## Pliki i wymagania
 
 | Plik | Zastosowanie |
 | --- | --- |
-| `QuizEngine.cs` | Silnik C# wklejany do Action w Streamer.bot |
+| `QuizEngine.cs` | Silnik quizowy C# wklejany do Action w Streamer.bot |
 | `panel.html` | Lokalny panel WWW |
 | `overlay.html` | Źródło przeglądarkowe do OBS |
-| `OTWORZ_PANEL.url` | Skrót do panelu po ustawieniu serwera HTTP |
-| `PODGLAD_OVERLAYU.url` | Skrót do demonstracyjnego overlayu |
+| `OTWORZ_PANEL.url` | Opcjonalny skrót do panelu |
+| `PODGLAD_OVERLAYU.url` | Opcjonalny skrót do demonstracyjnego overlayu |
 | `LICENSE` | Licencja MIT |
 
-Wymagany jest Windows ze Streamer.bot obsługującym `Execute C# Code`, `HTTP Server` i `WebSocket Server`, aktualna przeglądarka oraz połączone konto Twitch, jeśli chcesz zbierać głosy z czatu. OBS jest potrzebny do wyświetlania overlayu na transmisji, nie do samego działania panelu.
+Pliki skrótów mogą nie być dołączone do każdej paczki. Panel i overlay można zawsze otworzyć bezpośrednio za pomocą ich adresów HTTP.
 
-Kod był analizowany pod kątem zgodności ze środowiskiem Streamer.bot **1.0.7**, ale nie deklaruje pełnej kompatybilności ze wszystkimi wersjami hosta.
+### Wymagania
+
+- Windows z kompatybilną wersją Streamer.bot.
+- Obsługa `Execute C# Code`, `HTTP Server` i `WebSocket Server`.
+- Aktualna przeglądarka internetowa.
+- Połączone konto Twitch, jeżeli chcesz zbierać głosy od widzów na czacie.
+- OBS Studio, jeżeli chcesz wyświetlać overlay podczas transmisji.
+
+OBS nie jest wymagany do korzystania z samego panelu WWW.
+
+Kod był analizowany pod kątem zgodności ze środowiskiem Streamer.bot **1.0.7**, ale pełna kompatybilność ze wszystkimi wersjami hosta nie jest gwarantowana.
 
 ## Instalacja od zera
 
 ### 1. Pobierz odpowiednią paczkę
 
-Pobierz paczkę **LukiQuizEngine** z odpowiedniego wydania w sekcji Releases, gdy zostanie opublikowana. Rozpakuj ją do stałego folderu, np.:
+Pobierz odpowiednią paczkę **LukiQuizEngine** z sekcji GitHub Releases, gdy wydanie będzie dostępne.
+
+Rozpakuj ją do stałego folderu, na przykład:
 
 ```text
 C:\StreamerBot\LukiQuizEngine
 ```
 
-Nie mieszaj plików `panel.html`, `overlay.html` i `QuizEngine.cs` z różnych buildów. Wszystkie trzy muszą odpowiadać temu samemu wydaniu.
+Nie mieszaj plików `panel.html`, `overlay.html` i `QuizEngine.cs` pochodzących z różnych buildów.
+
+**Wszystkie trzy pliki muszą pochodzić z tego samego wydania.**
 
 ### 2. Dodaj jedną Action w Streamer.bot
 
-1. W zakładce **Actions** utwórz Action o nazwie dokładnie `QUIZ - Silnik`.
-2. Dodaj sub-action **Core > C# > Execute C# Code**.
-3. Wklej całą zawartość `QuizEngine.cs`.
-4. Użyj **Find Refs** i **Save and Compile**. Sprawdź, czy kod się kompiluje.
-5. Do tej samej Action przypisz **jeden** trigger `Twitch > Chat > Message`.
-6. Upewnij się, że Action jest włączona.
+1. Otwórz zakładkę **Actions** w Streamer.bot.
+2. Utwórz nową Action o dokładnej nazwie `QUIZ - Silnik`.
+3. Dodaj sub-action **Core > C# > Execute C# Code**.
+4. Wklej całą zawartość pliku `QuizEngine.cs`.
+5. Kliknij **Find Refs**, a następnie **Save and Compile**.
+6. Sprawdź, czy kod kompiluje się poprawnie.
+7. Do tej samej Action przypisz **jeden** trigger `Twitch > Chat > Message`.
+8. Upewnij się, że Action jest włączona.
 
-Nie twórz oddzielnych triggerów dla `!1`, `!2` i kolejnych głosów.
+Nie twórz osobnych triggerów dla `!1`, `!2` ani pozostałych komend głosowania.
 
 ### 3. Skonfiguruj WebSocket Server
 
@@ -106,10 +143,12 @@ Port:           8080
 Endpoint:       /
 Authentication: ON
 Enforce:        ON
-Password:       własne, silne i unikalne hasło
+Password:       Własne, silne i unikalne hasło
 ```
 
-Zapisz ustawienia i uruchom serwer. Jeśli był uruchomiony podczas zmian, uruchom go ponownie.
+Zapisz ustawienia i uruchom serwer.
+
+Jeżeli serwer był już uruchomiony podczas zmiany konfiguracji, uruchom go ponownie.
 
 ### 4. Skonfiguruj HTTP Server
 
@@ -120,32 +159,53 @@ Host: 127.0.0.1
 Port: 7474
 ```
 
-Dodaj mapowanie:
+Dodaj następujące mapowanie folderu:
 
 ```text
 Path:   quiz
 Folder: C:\StreamerBot\LukiQuizEngine
 ```
 
-Folder musi wskazywać rzeczywistą lokalizację plików. Uruchom HTTP Server. **Nie zmieniaj hosta na `0.0.0.0` i nie udostępniaj serwera przez LAN, tunel ani internet.** Wyjaśnienie znajduje się w sekcji bezpieczeństwa.
+Folder musi wskazywać rzeczywistą lokalizację plików LukiQuizEngine.
 
-### 5. Połącz panel
+Uruchom HTTP Server.
 
-Otwórz:
+**Nie zmieniaj hosta na `0.0.0.0` ani nie udostępniaj serwera przez LAN, tunel lub internet.**
+
+Wyjaśnienie znajduje się w sekcji dotyczącej bezpieczeństwa.
+
+### 5. Połącz panel WWW
+
+Otwórz w przeglądarce:
 
 ```text
 http://127.0.0.1:7474/quiz/panel.html
 ```
 
-Możesz też skorzystać z `OTWORZ_PANEL.url`. Wpisz hasło WebSocket, kliknij **Połącz bezpiecznie** i sprawdź zakładkę **Diagnostyka**. Niektórych właściwości konfiguracji sieciowej diagnostyka nie może jednoznacznie potwierdzić, więc jej wynik nie zastępuje sprawdzenia ustawień Streamer.bot.
+Możesz również użyć `OTWORZ_PANEL.url`, jeżeli skrót jest dostępny w paczce.
+
+Wpisz hasło WebSocket, kliknij **Połącz bezpiecznie** i otwórz sekcję **Diagnostyka**.
+
+Niektórych właściwości konfiguracji sieciowej wbudowana diagnostyka nie może jednoznacznie zweryfikować.
+
+Pomyślny wynik diagnostyki nie zastępuje samodzielnego sprawdzenia ustawień serwerów w Streamer.bot.
 
 ### 6. Dodaj overlay do OBS
 
-Po prawidłowym połączeniu panelu użyj **Skopiuj URL overlayu**. W OBS dodaj źródło **Browser / Przeglądarka**, wklej cały skopiowany URL i ustaw rozmiar `1920 × 1080`.
+Po prawidłowym połączeniu panelu:
 
-Nie korzystaj z adresu demonstracyjnego `?demo=1` podczas prawdziwej transmisji. Pełny URL zawiera haslo WebSocket we fragmencie po `#`
+1. Kliknij **Skopiuj URL overlayu** w panelu.
+2. Otwórz OBS Studio.
+3. Dodaj nowe źródło **Browser / Przeglądarka**.
+4. Wklej cały skopiowany adres URL.
+5. Ustaw rozdzielczość `1920 × 1080`.
+6. Zapisz ustawienia źródła przeglądarkowego.
 
-Podgląd demonstracyjny:
+Podczas prawdziwej transmisji nie korzystaj z demonstracyjnego adresu zawierającego `?demo=1`.
+
+Pełny adres overlayu zawiera hasło WebSocket we fragmencie URL znajdującym się po znaku `#`.
+
+Demonstracyjny overlay:
 
 ```text
 http://127.0.0.1:7474/quiz/overlay.html?demo=1
@@ -153,177 +213,552 @@ http://127.0.0.1:7474/quiz/overlay.html?demo=1
 
 ## Pierwszy test
 
-1. Włącz testową rundę z dwoma odpowiedziami.
+1. Uruchom testową rundę zawierającą dwie odpowiedzi.
 2. Wyślij `!1` z konta widza na podłączonym czacie Twitch.
-3. Sprawdź, czy głos widoczny jest w panelu i na overlayu.
+3. Sprawdź, czy głos pojawia się w panelu i na overlayu.
 4. Zamknij głosowanie, ujawnij poprawną odpowiedź i sprawdź naliczone punkty.
-5. Sprawdź komendy `!punkty` i `!ranking`.
-6. Przeprowadź oddzielną rundę z timerem oraz `AutoReveal`.
-7. Sprawdź ręczny zapis rankingu, listę archiwów i eksport CSV.
+5. Przetestuj komendy `!punkty` i `!ranking`.
+6. Przeprowadź kolejną rundę z timerem i funkcją `AutoReveal`.
+7. Sprawdź ręczny zapis rankingu, przeglądanie archiwów i eksport CSV.
+8. Przełącz panel pomiędzy trybami PROSTY, ADVANCED i LEGACY.
+9. Przetestuj język polski i angielski w panelu oraz overlayu.
+10. Opcjonalnie skorzystaj z wbudowanego symulatora, aby przetestować punktowanie i głosowanie bez modyfikowania prawdziwych danych quizu.
 
 ## Tryby panelu
 
-Panel LukiQuizEngine 2.1.0 BETA oferuje trzy tryby interfejsu:
+LukiQuizEngine 2.1.0 BETA oferuje trzy tryby interfejsu.
 
-- **PROSTY** - podstawowe funkcje obsługi quizu, w tym pytania, rundy, szablony, ranking, historia i pomoc.
-- **ADVANCED** - pełny dostęp do ustawień, zaawansowanych narzędzi, zarządzania danymi i symulatora.
-- **LEGACY** - interfejs inspirowany wersją 1.3.0, łączący jej charakterystyczny wygląd z wybranymi możliwościami silnika V2.
+### PROSTY
 
-Wszystkie trzy tryby korzystają z tych samych danych i tego samego silnika quizowego. Zmiana trybu nie resetuje rankingu ani aktywnej konfiguracji.
+Przeznaczony do codziennej obsługi quizu.
 
-Panel obsługuje język polski i angielski. Język overlayu może być synchronizowany z panelem lub ustawiany niezależnie.
+Zapewnia wygodny dostęp do podstawowych funkcji, takich jak:
+
+- Pytania i rundy głosowania.
+- Szablony i zestawy pytań.
+- Ranking.
+- Historia rund.
+- Podstawowe sterowanie i pomoc.
+
+### ADVANCED
+
+Zapewnia dostęp do pełnego zestawu dostępnych ustawień i narzędzi, w tym:
+
+- Zaawansowanych ustawień quizu.
+- Zarządzania danymi.
+- Zarządzania archiwami.
+- Personalizacji overlayu.
+- Diagnostyki.
+- Lokalnego symulatora quizu.
+
+### LEGACY
+
+Interfejs inspirowany oryginalnym wyglądem **LukiQuizEngine 1.3.0**.
+
+Zachowuje znajomy styl wizualny, jednocześnie korzystając z nowoczesnego silnika V2.
+
+Wybrane funkcje V2, w tym historia rund i archiwa rankingów, pozostają dostępne również w trybie Legacy.
+
+### Wspólne dane i działanie
+
+Wszystkie trzy tryby panelu wykorzystują **ten sam silnik quizowy, ranking i konfigurację**.
+
+Przełączanie między nimi nie resetuje punktacji ani aktywnych ustawień quizu.
+
+Interfejs oferuje również ulepszone rozróżnianie przycisków za pomocą kolorów, wyróżnianie aktywnych elementów i wizualne oznaczanie wybranych opcji.
+
+## Ustawienia języka
+
+LukiQuizEngine 2.1.0 BETA obsługuje:
+
+- **Polski (PL)**
+- **Angielski (EN)**
+
+Język można zmienić bezpośrednio w panelu.
+
+Overlay również obsługuje oba języki.
+
+Język overlayu może być automatycznie synchronizowany z językiem panelu lub konfigurowany niezależnie.
+
+Jeżeli synchronizacja jest włączona, overlay korzysta z języka wybranego w panelu.
+
+Zmiana języka interfejsu nie resetuje punktów ani nie modyfikuje wyników głosowania.
+
+**Ważne:** istniejące nazwy komend, identyfikatory Action, wymagane teksty potwierdzeń oraz nazwy zmiennych wewnętrznych pozostają bez zmian niezależnie od wybranego języka.
+
+Przykładowo, poniższe komendy Twitch nadal zachowują oryginalne nazwy:
+
+```text
+!punkty
+!ranking
+```
+
+Wymagane teksty potwierdzeń, takie jak `PRZYWROC` i `USUN ARCHIWA`, również muszą zostać wpisane dokładnie w pokazanej postaci.
 
 ## Głosowanie i komendy Twitch
 
 | Komenda | Działanie |
 | --- | --- |
 | `!1` ... `!12` | Głosowanie na odpowiedź o podanym numerze |
-| `!punkty` | Sprawdzenie własnego wyniku |
-| `!ranking` | Wyświetlenie rankingu na czacie |
-| `!quiz ...` | Polecenia moderatorskie obsługiwane przez silnik |
+| `!punkty` | Wyświetlenie własnego wyniku |
+| `!ranking` | Wyświetlenie najlepszych wyników rankingu na czacie Twitch |
+| `!quiz ...` | Komendy moderatorskie obsługiwane przez silnik |
 
-Komendy administracyjne czatu podlegają uprawnieniom nadawcy i moderatorów. Automatyczne komunikaty o wydarzeniach rundy są domyślnie wyłączone (`AnnounceRoundEventsInChat = false` w `QuizEngine.cs`).
+Administracyjne komendy czatu podlegają uprawnieniom nadawcy i moderatorów.
+
+Automatyczne komunikaty o wydarzeniach rundy na czacie Twitch są domyślnie wyłączone:
+
+```csharp
+AnnounceRoundEventsInChat = false
+```
+
+Ustawienie znajduje się w `QuizEngine.cs`.
+
+### Tryby rozpoznawania głosów
+
+Wersja 2.1.0 wprowadza trzy sposoby rozpoznawania wiadomości zawierających głos.
+
+| Tryb | Akceptowane przykłady | Działanie |
+| --- | --- | --- |
+| `STRICT` | `!1` | Akceptuje wyłącznie dokładną komendę głosowania |
+| `WHITESPACE` | `!1`, `!1 siema` | Pozwala dopisać tekst oddzielony od komendy białym znakiem |
+| `ATTACHED` | `!1`, `!1 siema`, `!1siema` | Pozwala również dopisać tekst bezpośrednio po komendzie, bez spacji |
+
+Domyślnym trybem jest `STRICT`.
+
+Wybrany tryb określa sposób interpretowania wiadomości przez silnik. Numer nadal musi odpowiadać jednej z dostępnych odpowiedzi.
+
+### Ważna informacja o trybie ATTACHED
+
+Ten tryb może potencjalnie powodować konflikty z innymi komendami Twitch.
+
+Przykładowo:
+
+```text
+!1v1
+```
+
+Może zostać zinterpretowane jako głos na odpowiedź `1`, gdy włączony jest tryb `ATTACHED`.
+
+W przypadku transmisji wykorzystujących wiele własnych komend czatu bezpieczniejszym wyborem pod względem unikania konfliktów może być `STRICT` lub `WHITESPACE`.
+
+Silnik odrzuca również określone nieprawidłowe, niewidoczne i sterujące znaki, aby ograniczyć błędne rozpoznawanie głosów.
+
+## Lokalny symulator quizu
+
+Wersja 2.1.0 BETA wprowadza wbudowany lokalny symulator dostępny z poziomu zaawansowanego interfejsu.
+
+Symulator umożliwia testowanie wybranych mechanik quizu bez przeprowadzania prawdziwego głosowania na Twitchu.
+
+### Dostępne funkcje symulatora
+
+- Tworzenie testowego pytania.
+- Korzystanie z osobnej kopii aktualnego szkicu pytania.
+- Generowanie fikcyjnych widzów.
+- Symulowanie losowych głosów.
+- Oddawanie i zmienianie pojedynczych głosów testowych.
+- Testowanie zasad głosowania.
+- Testowanie trybów rozpoznawania głosów `STRICT`, `WHITESPACE` i `ATTACHED`.
+- Testowanie punktowania i zasad przyznawania punktów częściowych.
+- Testowanie timera, pauzy i wznowienia.
+- Zamykanie, ponowne otwieranie, ujawnianie i anulowanie testowych rund.
+- Przeglądanie symulowanych wyników.
+
+Symulator obsługuje generowanie do **2000 fikcyjnych uczestników**.
+
+### Oddzielenie danych
+
+Symulator przechowuje własne dane w pamięci bieżącej strony przeglądarki.
+
+**Nie modyfikuje:**
+
+- Prawdziwego rankingu.
+- Rzeczywistej historii głosowania.
+- Zapisanych archiwów rankingów.
+- Aktywnego stanu quizu w Streamer.bot.
+
+Odświeżenie strony powoduje wyczyszczenie symulacji.
+
+### Ograniczenia symulatora
+
+Symulator odtwarza wybrane mechaniki quizu, ale nie zastępuje pełnych testów w rzeczywistym środowisku Streamer.bot.
+
+Nie testuje w pełni:
+
+- Połączenia z Twitchem.
+- Wykonywania Action przez Streamer.bot.
+- Integracji z OBS.
+- Funkcji drużynowych.
+- Uprawnień użytkowników czatu.
+- Wszystkich ograniczeń częstotliwości wiadomości i mechanizmów cooldown.
+
+Przed wykorzystaniem nowego wydania podczas transmisji należy wykonać również prawdziwy test integracyjny.
 
 ## Rankingi, archiwa i przywracanie
 
 ### Bieżący ranking i CSV
 
-W zakładce **Ranking** możesz przeglądać punkty, korygować wyniki, eksportować i importować CSV. Import i reset zmieniają aktualną punktację, dlatego sprawdzaj podgląd i komunikat potwierdzenia. Pełny backup stanu to **inny rodzaj kopii** niż eksport CSV.
+Sekcja **Ranking** umożliwia:
 
-### Automatyczne archiwum przy resecie
+- Przeglądanie punktów.
+- Korygowanie istniejących wyników.
+- Eksportowanie rankingu do CSV.
+- Importowanie rankingu z CSV.
+- Resetowanie rankingu.
+- Ręczne tworzenie archiwów rankingu.
 
-Przed resetowaniem niepustego rankingu silnik zapisuje lokalne archiwum JSON. Jeśli wymagany zapis archiwum się nie powiedzie, reset powinien zostać odrzucony. Nie usuwaj ręcznie plików kontrolnych w trakcie operacji i nie zakładaj, że brak odpowiedzi panelu oznacza brak wykonania resetu.
+Import i reset mogą zmienić aktualne dane punktowe.
 
-### Ręczny zapis i przeglądanie
+Przed wykonaniem operacji zawsze sprawdź podgląd oraz komunikat potwierdzenia.
 
-Przycisk **Zapisz ranking** tworzy nazwane archiwum bez resetowania wyników. Sekcja archiwum w panelu pozwala wyszukiwać wpisy, zobaczyć datę i typ zapisu, a następnie obejrzeć historyczne wyniki bez zmiany bieżącego rankingu.
+**Pełny backup stanu** nie jest tym samym co eksport rankingu CSV.
 
-### Przywrócenie rankingu
+### Automatyczne archiwum przed resetem
+
+Przed zresetowaniem niepustego rankingu silnik tworzy lokalne archiwum JSON.
+
+Jeżeli wymagane utworzenie archiwum nie powiedzie się, reset powinien zostać odrzucony.
+
+Nie usuwaj ręcznie plików kontrolujących operację, gdy trwa archiwizacja lub reset.
+
+Jeżeli panel przestanie odpowiadać, nie zakładaj automatycznie, że reset się nie powiódł.
+
+Przed ponowną próbą zweryfikuj aktualny stan.
+
+### Ręczny zapis i przeglądanie archiwów
+
+Przycisk **Zapisz ranking** tworzy archiwum bez resetowania punktów.
+
+Archiwum można opcjonalnie nazwać.
+
+Sekcja zarządzania archiwami pozwala:
+
+- Przeglądać zapisane archiwa.
+- Wyszukiwać archiwa według nazwy.
+- Filtrować archiwa według typu.
+- Sortować dostępne archiwa.
+- Sprawdzać informacje o archiwach.
+- Podglądać historyczne wyniki rankingu.
+- Przywracać kwalifikujące się archiwa.
+
+Otwieranie lub zamykanie podglądu historycznego rankingu nie zmienia aktualnych wyników.
+
+### Przywracanie archiwalnego rankingu
 
 1. Wybierz archiwum i sprawdź jego podgląd.
-2. Zakończ albo anuluj aktywną rundę.
-3. Kliknij **Przywróć ranking**, sprawdź ostrzeżenie i wpisz `PRZYWROC`.
-4. Silnik sprawdza zgodność danych i tworzy **archiwum bezpieczeństwa dotychczasowego rankingu** przed zastosowaniem przywracania.
-5. Po operacji sprawdź bieżący ranking i statystyki.
+2. Zakończ lub anuluj aktywną rundę.
+3. Kliknij **Przywróć ranking**.
+4. Przeczytaj ostrzeżenie i wpisz `PRZYWROC`.
+5. Silnik weryfikuje archiwum i tworzy **archiwum bezpieczeństwa aktualnego rankingu** przed rozpoczęciem przywracania.
+6. Sprawdź przywrócony ranking i statystyki.
 
-Przywrócenie rankingu **nie przywraca całej konfiguracji quizu**, szablonów, overlayu ani kompletnej aktywnej sesji. Przy niezgodnych ustawieniach drużyn przywrócenie może zostać zablokowane. Archiwa, snapshoty i pełne backupy mają różne zakresy danych.
+Przywrócenie archiwalnego rankingu **nie przywraca całej konfiguracji quizu**, szablonów pytań, ustawień overlayu ani kompletnej aktywnej sesji.
 
-Jeśli panel zgłasza **niepotwierdzony wynik** resetu lub przywrócenia, nie klikaj ponownie w ciemno. Najpierw sprawdź stan i użyj dostępnej w panelu opcji sprawdzenia wyniku przywracania, a w razie potrzeby zajrzyj do logów Streamer.bot.
+Przywrócenie może zostać zablokowane, jeżeli aktualna konfiguracja drużyn nie jest zgodna z wybranym archiwum.
 
-### Integralność i limity
+Archiwa rankingów, snapshoty i pełne backupy zachowują różne zakresy danych.
 
-Nowo tworzone archiwa posiadają pole `ContentHash` służące do wykrywania uszkodzeń treści. Dla zgodności mogą być odczytywane również starsze archiwa bez tego pola. Zwykły SHA-256 **nie jest podpisem cyfrowym** i nie zabezpiecza przed osobą mogącą celowo modyfikować pliki.
+Jeśli panel zgłasza **niepotwierdzony wynik przywrócenia lub resetu**, nie powtarzaj natychmiast operacji.
+
+Najpierw sprawdź aktualny ranking i skorzystaj z dostępnej opcji weryfikacji statusu przywracania.
+
+W razie potrzeby sprawdź również logi Streamer.bot.
+
+### Ręczne usuwanie archiwów
+
+Wersja 2.1.0 BETA dodaje możliwość ręcznego czyszczenia archiwów.
+
+Z poziomu panelu można wybrać kwalifikujące się archiwa do usunięcia.
+
+Przed usunięciem archiwów:
+
+1. Wybierz archiwa przeznaczone do usunięcia.
+2. Uruchom podgląd planowanego czyszczenia.
+3. Sprawdź listę wybranych plików.
+4. Zweryfikuj liczbę i łączny rozmiar archiwów.
+5. Wpisz wymagany tekst potwierdzenia:
+
+```text
+USUN ARCHIWA
+```
+
+Przed usunięciem wybranych plików silnik wykonuje dodatkową walidację.
+
+Chronione archiwa nie mogą zostać usunięte za pomocą standardowego mechanizmu czyszczenia.
+
+Silnik zapobiega również usunięciu wszystkich dostępnych archiwów rankingów.
+
+**Usuwanie archiwów jest operacją destrukcyjną i nie należy traktować jej jak zwykłej czynności, którą można łatwo cofnąć.**
+
+Przed usunięciem ważnych archiwów wykonaj osobną kopię bezpieczeństwa.
+
+### Automatyczne czyszczenie archiwów
+
+Wersja 2.1.0 BETA udostępnia również opcjonalne ustawienia automatycznego przechowywania i czyszczenia archiwów.
+
+Dostępne opcje obejmują:
+
+- Włączanie i wyłączanie automatycznego czyszczenia.
+- Konfigurowanie maksymalnej liczby archiwów.
+- Konfigurowanie maksymalnego wieku archiwów w dniach.
+- Opcjonalne uwzględnianie archiwów utworzonych ręcznie.
+- Opcjonalne uwzględnianie archiwów bezpieczeństwa.
+
+Automatyczne czyszczenie jest **domyślnie wyłączone**.
+
+Domyślna konfiguracja po włączeniu funkcji przewiduje maksymalnie `100` archiwów i maksymalny wiek `365` dni.
+
+Archiwa ręczne oraz archiwa bezpieczeństwa są domyślnie wykluczone z automatycznego czyszczenia.
+
+Automatyczne czyszczenie jest wywoływane podczas określonych operacji związanych z archiwizacją i resetowaniem rankingu.
+
+**Nie jest to niezależna usługa działająca stale w tle.**
+
+Przed aktywowaniem funkcji lub rozszerzeniem zasad czyszczenia sprawdź dostępny podgląd i wykonaj osobny backup.
+
+Silnik chroni określone archiwa, w tym najnowsze dostępne archiwum oraz archiwa powiązane z niedokończonymi operacjami.
+
+### Integralność archiwów i ograniczenia
+
+Nowo tworzone archiwa zawierają pole `ContentHash`, które służy do wykrywania przypadkowych uszkodzeń lub nieoczekiwanych zmian zawartości.
+
+Dla zachowania kompatybilności mogą być również akceptowane obsługiwane starsze archiwa bez tego pola.
+
+Zwykły hash SHA-256 **nie jest podpisem cyfrowym**.
+
+Nie zabezpiecza przed osobą, która może celowo zmodyfikować pliki archiwów i odpowiadające im informacje o skrócie.
 
 ## Gdzie są przechowywane dane
 
 | Dane | Lokalizacja / mechanizm |
 | --- | --- |
-| Bieżący stan i ranking V2 | Trwała zmienna Streamer.bot `localQuiz_data_v2` |
-| Stan publiczny dla overlayu | Streamer.bot `localQuiz_public_v2` |
-| Automatyczne snapshoty | Streamer.bot `localQuiz_snapshots_v2` |
-| Archiwa rankingu JSON (automatyczne, ręczne, bezpieczeństwa) | `%LOCALAPPDATA%\LukiQuizEngine\RankingArchives` |
-| Ustawienia interfejsu i szkic przeglądarki | Lokalna pamięć przeglądarki (`localStorage`) |
-| Pełny backup | Eksportowany na żądanie z panelu plik |
-| Hasło WebSocket | Pamięć uruchomionego klienta, a dla OBS również fragment pełnego URL overlayu |
+| Bieżący stan V2 i ranking | Trwała zmienna Streamer.bot `localQuiz_data_v2` |
+| Stan publiczny wykorzystywany przez overlay | Zmienna Streamer.bot `localQuiz_public_v2` |
+| Automatyczne snapshoty | Zmienna Streamer.bot `localQuiz_snapshots_v2` |
+| Archiwa rankingu JSON (automatyczne, ręczne i bezpieczeństwa) | `%LOCALAPPDATA%\LukiQuizEngine\RankingArchives` |
+| Preferencje interfejsu i szkic przeglądarki | Pamięć lokalna przeglądarki (`localStorage`) |
+| Pełny backup stanu | Plik eksportowany na żądanie z panelu WWW |
+| Hasło WebSocket | Pamięć uruchomionego klienta, a w przypadku OBS również fragment pełnego URL overlayu |
 
-Zmienne z oznaczeniem `v1` są danymi starszego silnika lub migracji, **nie podstawowym miejscem zapisu rankingu v2.0.2**. Nie kasuj ich bez wykonania odpowiednich kopii i upewnienia się, że migracja zakończyła się poprawnie.
+Zmienne oznaczone jako `v1` należą do starszego silnika lub procesu migracji.
 
-Folder AppData jest przypisany do użytkownika Windows. Jeśli przenosisz quiz na inny komputer lub konto, skopiuj potrzebne archiwa osobno. Aktualizacja plików HTML i C# nie przenosi archiwów automatycznie.
+**Nie są podstawowym miejscem przechowywania rankingu V2.**
+
+Nie usuwaj ich bez wykonania odpowiednich kopii i upewnienia się, że migracja została zakończona poprawnie.
+
+Folder AppData jest powiązany z aktualnym użytkownikiem systemu Windows.
+
+Jeżeli przenosisz LukiQuizEngine na inny komputer lub konto Windows, skopiuj osobno wszystkie potrzebne archiwa.
+
+Podmiana plików HTML i C# nie przenosi automatycznie lokalnych archiwów.
 
 ## Bezpieczeństwo i znane ograniczenia
 
 > [!WARNING]
-> **Znane ograniczenie bezpieczeństwa: HTTP `/DoAction` w Streamer.bot.** Bieżąca wersja LukiQuizEngine nie ma niezależnego uwierzytelniania wszystkich administracyjnych wywołań Action przez HTTP.
+> **Znane ograniczenie bezpieczeństwa: HTTP `/DoAction` w Streamer.bot.**
+>
+> Aktualna wersja LukiQuizEngine nie zapewnia niezależnego uwierzytelniania wszystkich administracyjnych wywołań Action wykonywanych przez HTTP API.
 
-### Obowiązkowa konfiguracja lokalna
+### Wymagana konfiguracja lokalna
 
-- **HTTP Server:** `127.0.0.1:7474`, bez publicznego tunelu, reverse proxy ani przekierowania portów.
-- **WebSocket Server:** `127.0.0.1:8080/`, `Authentication = ON`, `Enforce = ON` oraz silne, indywidualne hasło.
-- Nie ustawiaj nasłuchu HTTP ani WebSocket na `0.0.0.0`.
-- Nie udostępniaj pełnego adresu źródła OBS ani plików z prywatnymi danymi widzów.
+- **HTTP Server:** `127.0.0.1:7474`, bez publicznego tunelu, reverse proxy i przekierowania portów.
+- **WebSocket Server:** `127.0.0.1:8080/`, z `Authentication = ON`, `Enforce = ON` oraz silnym, unikalnym hasłem.
+- Nie konfiguruj HTTP ani WebSocket do nasłuchiwania na adresie `0.0.0.0`.
+- Nie udostępniaj pełnego adresu źródła przeglądarkowego OBS ani plików zawierających prywatne informacje o widzach.
 
 ### Ważna informacja o bezpieczeństwie
 
-Wbudowany HTTP Server Streamer.bot udostępnia `POST /DoAction`, umożliwiający wywoływanie akcji i przekazywanie argumentów. **WebSocket Authentication i Enforce nie chronią automatycznie tego osobnego endpointu HTTP.** Klient mający dostęp do HTTP API może potencjalnie uruchamiać administracyjne operacje LukiQuizEngine **oraz inne Action w Streamer.bot**.
+Wbudowany HTTP Server Streamer.bot udostępnia endpoint `POST /DoAction`.
 
-Nasłuch tylko na `127.0.0.1` znacząco ogranicza dostęp z sieci, ale nie jest niezależnym uwierzytelnianiem. Nie chroni przed niezaufanymi lokalnymi procesami, a niektóre scenariusze żądań z obcych stron internetowych do usług lokalnych zależą od przeglądarki i konfiguracji serwera. **Nie deklaruje pełnej ochrony przed takimi żądaniami.**
+Endpoint umożliwia klientom wywoływanie Action i przekazywanie argumentów.
 
-Z tego powodu **nie udostępniaj wbudowanego HTTP Server Streamer.bot niezaufanym urządzeniom lub użytkownikom**. Nie instaluj quizu z założeniem, że HTTP API jest bezpiecznym publicznym panelem administracyjnym.
+**WebSocket Authentication i Enforce nie zabezpieczają automatycznie tego osobnego endpointu HTTP.**
 
-Oficjalna dokumentacja: [HTTP DoAction](https://docs.streamer.bot/api/http/requests/do-action), [HTTP Server](https://docs.streamer.bot/api/http/guide/configuration), [WebSocket Server](https://docs.streamer.bot/api/websocket/guide/configuration).
+Klient posiadający dostęp do HTTP API może potencjalnie wywoływać operacje administracyjne LukiQuizEngine **oraz inne Action skonfigurowane w Streamer.bot**.
 
-### Hasło w URL overlayu
+Ograniczenie HTTP Server do adresu `127.0.0.1` znacząco zmniejsza możliwość dostępu z sieci, ale nie jest równoważne niezależnemu uwierzytelnianiu.
 
-Przycisk **Skopiuj URL overlayu** umieszcza poświadczenie WebSocket w części URL po `#`. Fragment nie jest normalnie wysyłany w żądaniu HTTP, ale cały adres zostaje zapisany w konfiguracji źródła OBS. Traktuj pełny URL jak hasło administracyjne. Jeśli go ujawnisz, zmień hasło WebSocket i wygeneruj nowy adres overlayu.
+Nie chroni przed niezaufanymi procesami działającymi lokalnie.
 
-### Ważne ograniczenia bezpieczeństwa i trwałości
+Niektóre scenariusze żądań kierowanych z zewnętrznych stron internetowych do usług lokalnych zależą również od konfiguracji przeglądarki i serwera.
 
-- Diagnostyka panelu nie dowodzi samodzielnie, że serwery są dostępne wyłącznie lokalnie. Sprawdź ustawienie adresów w Streamer.bot.
-- Pełna atomowość pomiędzy plikami JSON archiwów a trwałym magazynem Streamer.bot nie została niezależnie potwierdzona przy nagłym wyłączeniu zasilania.
-- Lokalne dane rankingu i archiwa mogą zawierać nicki i identyfikatory użytkowników Twitch. Nie publikuj ich przypadkowo.
-- Mechanizmy kopii bezpieczeństwa zmniejszają ryzyko utraty danych, ale nie zastępują osobnego backupu komputera.
+**Nie gwarantuję pełnej ochrony przed takimi żądaniami.**
+
+Z tego powodu **nigdy nie udostępniaj wbudowanego HTTP Server Streamer.bot niezaufanym urządzeniom ani użytkownikom**.
+
+Nie zakładaj, że HTTP API jest bezpiecznym, publicznie dostępnym interfejsem administracyjnym.
+
+Oficjalna dokumentacja:
+
+- [HTTP DoAction](https://docs.streamer.bot/api/http/requests/do-action)
+- [HTTP Server](https://docs.streamer.bot/api/http/guide/configuration)
+- [WebSocket Server](https://docs.streamer.bot/api/websocket/guide/configuration)
+
+### Hasło w adresie URL overlayu
+
+Przycisk **Skopiuj URL overlayu** umieszcza poświadczenie WebSocket we fragmencie adresu URL znajdującym się po `#`.
+
+Fragment ten zwykle nie jest wysyłany w żądaniu HTTP.
+
+Pełny adres URL zostaje jednak zapisany w konfiguracji źródła przeglądarkowego OBS.
+
+Traktuj cały URL overlayu jak poufne dane uwierzytelniające.
+
+Jeżeli adres zostanie ujawniony, zmień hasło WebSocket i wygeneruj nowy URL overlayu.
+
+### Ważne ograniczenia bezpieczeństwa i trwałości danych
+
+- Diagnostyka panelu nie może samodzielnie udowodnić, że skonfigurowane serwery są dostępne wyłącznie lokalnie. Sprawdź rzeczywiste adresy w Streamer.bot.
+- Pełna atomowość pomiędzy plikami JSON archiwów a trwałym magazynem Streamer.bot nie została niezależnie potwierdzona w scenariuszach nagłego zaniku zasilania.
+- Lokalne rankingi i archiwa mogą zawierać nazwy użytkowników oraz identyfikatory Twitch. Nie publikuj przypadkowo takich plików.
+- Wbudowane kopie bezpieczeństwa zmniejszają ryzyko utraty danych, ale nie zastępują osobnego backupu komputera.
+- Automatyczne czyszczenie i ręczne usuwanie archiwów wymagają ostrożności, ponieważ mogą trwale usunąć zapisane pliki.
 
 ## Aktualizacja starszej instalacji
 
-**Z v2.0.0 lub v2.0.1 BETA na v2.0.2 BETA:**
+### Z v2.0.2 BETA do v2.1.0 BETA
 
 1. Zakończ lub anuluj aktywną rundę.
-2. Wyeksportuj aktualny ranking i pełny backup stanu, a także zachowaj folder starej instalacji.
-3. Podmień razem `QuizEngine.cs` w Action oraz `panel.html` i `overlay.html` w folderze mapowania HTTP.
-4. Wykonaj **Find Refs** i **Save and Compile**.
-5. Upewnij się, że panel i silnik pokazują `2.0.2`, `PHoeniX` i `QUPA`. Odśwież cache przeglądarki i źródła OBS w razie potrzeby.
-6. Nie usuwaj trwałych zmiennych V2 ani starszych archiwów.
-7. Sprawdź ranking, działanie rundy i funkcje zapisu archiwum na danych testowych.
+2. Wyeksportuj aktualny ranking i pełny backup stanu.
+3. Zachowaj folder poprzedniej instalacji oraz wszystkie ważne archiwa rankingów.
+4. Zastąp kod C# w Action nową zawartością pliku `QuizEngine.cs`.
+5. Podmień razem pliki `panel.html` i `overlay.html`.
+6. W Streamer.bot wykonaj **Find Refs**, a następnie **Save and Compile**.
+7. Upewnij się, że silnik i panel pokazują wersję `2.1.0` oraz identyfikatory `PHoeniX` i `QUPA`.
+8. W razie potrzeby odśwież pamięć podręczną przeglądarki i źródła przeglądarkowego OBS.
+9. Sprawdź istniejący ranking, szablony, zestawy pytań i archiwa.
+10. Przetestuj tryby panelu, zmianę języka i głosowanie Twitch.
+11. Pozostaw automatyczne czyszczenie archiwów wyłączone, dopóki nie zweryfikujesz istniejących archiwów i nie wykonasz osobnej kopii bezpieczeństwa.
 
-**Z v1.3.0:** przed podmianą plików przeczytaj [MIGRATION.md](MIGRATION.md). Historia migracji oraz starsze ograniczenia są opisane w tym osobnym poradniku. Nie wykonuj migracji podczas aktywnej rundy.
+Podczas aktualizacji nie usuwaj trwałych zmiennych V2 ani istniejących archiwów.
+
+### Z v2.0.0 lub v2.0.1 BETA
+
+Przed aktualizacją:
+
+1. Zakończ lub anuluj aktywną rundę.
+2. Wyeksportuj aktualny ranking i pełny backup stanu.
+3. Zachowaj folder poprzedniej instalacji.
+4. Zaktualizuj wszystkie trzy główne pliki razem: `QuizEngine.cs`, `panel.html` i `overlay.html`.
+5. Wykonaj **Find Refs** i **Save and Compile**.
+6. Zweryfikuj wersję oraz identyfikatory buildu.
+7. Zachowaj istniejące trwałe zmienne V2 i archiwa.
+8. Przetestuj quiz oraz funkcje archiwizacji na danych nieprodukcyjnych.
+
+Zapoznaj się z CHANGELOG, aby sprawdzić zmiany wprowadzone w wydaniach pośrednich.
+
+### Z v1.3.0
+
+Przed podmianą plików przeczytaj [MIGRATION.md](MIGRATION.md).
+
+Historia migracji oraz znane ograniczenia starszej wersji zostały opisane w osobnym poradniku.
+
+Nie przeprowadzaj migracji podczas aktywnej rundy.
 
 ## Rozwiązywanie problemów
 
-| Objaw | Co sprawdzić |
+| Problem | Co sprawdzić |
 | --- | --- |
-| Strona pokazuje `404 Not Found` | Włączony HTTP Server, mapowanie `quiz` i właściwy folder zawierający `panel.html` |
-| Panel się otwiera, ale nie łączy | WebSocket na `127.0.0.1:8080`, poprawne hasło, Authentication i Enforce, restart serwera po zmianach |
-| Panel jest połączony, ale Action nie odpowiada | Dokładna nazwa `QUIZ - Silnik`, aktualny kod C#, **Find Refs** oraz **Save and Compile** |
-| Głosy `!1` nie działają | Połączenie Twitch, trigger wiadomości, otwarta runda, prawidłowy numer odpowiedzi |
-| Overlay pokazuje demo lub stare dane | Usuń `demo=1`, użyj URL skopiowanego po autoryzacji, sprawdź cache i mapowanie HTTP |
-| Nie otwiera się folder archiwów | Sprawdź Windows, uprawnienia do AppData, Eksplorator i komunikat w logach Streamer.bot |
-| Nie można przywrócić archiwum | Zakończ rundę, sprawdź zgodność drużyn i rewizję rankingu, ponownie otwórz podgląd |
-| Wynik zapisu / restore jest niepewny | Nie ponawiaj destrukcyjnej operacji w ciemno, sprawdź bieżący ranking i status operacji |
-| Po błędzie naliczania quiz nie może zakończyć rundy | Sprawdź diagnostykę `autoFinalizeError`; użyj świadomego anulowania problematycznej rundy, a następnie zweryfikuj punkty |
+| Strona wyświetla `404 Not Found` | Sprawdź, czy HTTP Server jest uruchomiony, istnieje mapowanie `quiz`, a wskazany folder zawiera `panel.html` |
+| Panel się otwiera, ale nie może się połączyć | Sprawdź WebSocket pod adresem `127.0.0.1:8080`, hasło, Authentication, Enforce i czy serwer został ponownie uruchomiony po zmianach |
+| Panel łączy się, ale Action nie odpowiada | Sprawdź dokładną nazwę `QUIZ - Silnik`, aktualny kod C#, **Find Refs** i **Save and Compile** |
+| Głosy takie jak `!1` nie działają | Sprawdź połączenie Twitch, trigger wiadomości, czy głosowanie jest otwarte i czy numer odpowiedzi jest prawidłowy |
+| Dodatkowy tekst po komendzie głosowania jest odrzucany | Sprawdź, czy wybrano tryb `STRICT`, `WHITESPACE` czy `ATTACHED` |
+| Overlay pokazuje demo lub nieaktualne dane | Usuń `demo=1`, użyj adresu skopiowanego po autoryzacji, sprawdź cache i mapowanie HTTP |
+| Overlay wyświetla nieodpowiedni język | Sprawdź ustawienia synchronizacji języka oraz konfigurację języka overlayu |
+| Folder archiwów się nie otwiera | Sprawdź Windows, uprawnienia AppData, Eksplorator plików i logi Streamer.bot |
+| Nie można przywrócić archiwum | Zakończ rundę, sprawdź zgodność konfiguracji drużyn i rewizję rankingu, a następnie ponownie otwórz podgląd |
+| Czyszczenie archiwów nie może zostać wykonane | Sprawdź aktywną rundę, chronione archiwa, wygasły podgląd czyszczenia, niedokończone operacje oraz ewentualne uszkodzone pliki |
+| Automatyczne czyszczenie nie działa | Sprawdź, czy funkcja jest włączona i czy wykonano operację uruchamiającą czyszczenie |
+| Wynik zapisu lub przywrócenia jest niepewny | Nie powtarzaj destrukcyjnej operacji w ciemno. Sprawdź aktualny ranking i status operacji |
+| Po błędzie punktowania quiz nie może zakończyć rundy | Sprawdź diagnostykę `autoFinalizeError`, w razie potrzeby świadomie anuluj problematyczną rundę i zweryfikuj punkty |
 
 ## Opcjonalna modyfikacja głosowania z v1.3.0
 
 <details>
-<summary><strong>Archiwalny poradnik - dodatkowy tekst po komendzie !1 ... !12</strong></summary>
+<summary><strong>Archiwalny poradnik - dodatkowy tekst po komendach !1 ... !12</strong></summary>
 
-Ten poradnik dotyczy **kodu v1.3.0** i jest zachowany dla osób korzystających ze starszego wydania. W **v2.0.2** nie należy podmieniać tych fragmentów bez samodzielnego sprawdzenia zgodności z aktualnym silnikiem.
+Ten poradnik dotyczy wyłącznie **LukiQuizEngine v1.3.0**.
 
-Domyślnie w 1.3.0 głos musiał mieć postać samodzielnej komendy `!1` ... `!12`.
+Został zachowany dla osób, które nadal korzystają ze starszego wydania.
 
-**Wariant 1 - dopisek po spacji.** Akceptuje np. `!1 siema`, ale nie `!1siema`:
+Wersja **2.1.0 BETA** ma już konfigurowalne tryby rozpoznawania głosów `STRICT`, `WHITESPACE` i `ATTACHED`.
+
+Nie zastępuj wyrażeń regularnych w aktualnym silniku 2.1.0 poniższymi przykładami.
+
+Domyślnie wersja 1.3.0 wymagała samodzielnych komend głosowania:
+
+```text
+!1
+!2
+!3
+```
+
+### Wariant 1 - dodatkowy tekst po białym znaku
+
+Akceptuje:
+
+```text
+!1 siema
+```
+
+Nie akceptuje:
+
+```text
+!1siema
+```
+
+Wyrażenie regularne:
 
 ```csharp
 private static readonly Regex VoteRegex =
     new Regex(@"^!(1[0-2]|[1-9])(?:\s+.*)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 ```
 
-**Wariant 2 - dopisek bez wymaganej spacji.** Akceptuje np. `!1siema`, ale może rozpoznać również początek innych komend, np. `!1v1`:
+### Wariant 2 - dodatkowy tekst bez wymaganej spacji
+
+Akceptuje:
+
+```text
+!1siema
+```
+
+Może jednak również rozpoznawać początek innych komend, np.:
+
+```text
+!1v1
+```
+
+Wyrażenie regularne:
 
 ```csharp
 private static readonly Regex VoteRegex =
     new Regex(@"^!(1[0-2]|[1-9])(?![0-9])", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 ```
 
-W wersji 1.3.0 zamieniało się **wyłącznie** wartość `VoteRegex` w `QuizEngine.cs`, wybierając tylko jeden wariant, a następnie wykonywało **Save and Compile**. To modyfikacja opcjonalna, nie domyślne zachowanie quizu. W razie konfliktu z innymi komendami Twitch lepszy jest wariant wymagający spacji.
+W wersji 1.3.0 wystarczyło zastąpić wyłącznie wartość `VoteRegex` w `QuizEngine.cs`, wybierając jeden z dwóch wariantów.
+
+Po wykonaniu zmiany należało kliknąć **Save and Compile**.
+
+Była to opcjonalna modyfikacja, a nie domyślne zachowanie quizu.
+
+W przypadku możliwych konfliktów z innymi komendami Twitch wariant wymagający białego znaku był zazwyczaj lepszym wyborem.
 
 </details>
 
 ## Historia projektu i licencja
 
-- [CHANGELOG.md](CHANGELOG.md) - historia zmian w 2.0.2, 2.0.1 i 2.0.0.
-- [MIGRATION.md](MIGRATION.md) - instrukcja przejścia ze starszej wersji 1.3.0.
-- Starszą zawartość README można znaleźć w [historii zmian pliku na GitHubie](https://github.com/Lukituki6/LukiQuizEngine-for-Streamer.bot/commits/main/README.md). Historycznych instrukcji 1.3.0 nie należy traktować jako aktualnej instrukcji instalacji 2.0.2.
+- [CHANGELOG.md](CHANGELOG.md) - historia wydań i zmian wprowadzanych w LukiQuizEngine V2, w tym wersji 2.1.0 BETA.
+- [MIGRATION.md](MIGRATION.md) - instrukcja migracji ze starszej wersji 1.3.0.
+- [READMElegacy.md](1.3.0/READMElegacy.md) - archiwalna dokumentacja wersji 1.3.0.
+- Starsze wersje głównego README są dostępne w [historii zmian pliku na GitHubie](https://github.com/Lukituki6/LukiQuizEngine-for-Streamer.bot/commits/main/README.md).
 
-**Wykorzystanie AI:** projekt był rozwijany również z pomocą narzędzi sztucznej inteligencji, m.in. podczas analizy i w pomocy prac nad kodem. Wszystkie istotne zmiany warto testować w docelowym środowisku Streamer.bot.
+Historycznych instrukcji instalacji dla wersji 1.3.0 nie należy traktować jako aktualnych instrukcji dotyczących 2.1.0 BETA.
 
-Projekt jest udostępniany na zasadach licencji [MIT](LICENSE), „tak jak jest”, bez gwarancji działania. Korzystasz z niego na własną odpowiedzialność, zwłaszcza przy zmianach konfiguracji i importowaniu danych.
+**Wykorzystanie AI:** przy rozwijaniu projektu korzystałem również z narzędzi sztucznej inteligencji, między innymi podczas analizy kodu i prac programistycznych.
+
+Wszystkie istotne zmiany należy przetestować w docelowym środowisku Streamer.bot.
+
+Projekt udostępniam na warunkach [licencji MIT](LICENSE), **„tak jak jest”**, bez gwarancji działania.
+> [!IMPORTANT]
+> Korzystasz z niego na własną odpowiedzialność, szczególnie podczas zmieniania konfiguracji, importowania danych i zarządzania archiwami.
