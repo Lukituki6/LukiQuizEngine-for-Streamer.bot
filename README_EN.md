@@ -5,18 +5,18 @@
 
 # LukiQuizEngine for Streamer.bot
 
-**Current release: v2.1.0 BETA**
+**Current release: v2.2.0**
 
 **Language:** [Polski](README.md) | English
 
-- [READMElegacy.md](1.3.0/READMElegacy.md) - archived documentation for the older **LukiQuizEngine v1.3.0**, available in the [1.3.0](1.3.0/) directory. It contains the original installation, configuration, and usage instructions. The information and code examples apply to version 1.3.0 and should not be used directly with the current 2.1.0 BETA version.
+- [READMElegacy.md](1.3.0/READMElegacy.md) - archived documentation for the older **LukiQuizEngine v1.3.0**, available in the [1.3.0](1.3.0/) directory. It contains the original installation, configuration, and usage instructions. The information and code examples apply to version 1.3.0 and should not be used directly with the current 2.2.0 version.
 
 LukiQuizEngine is a local quiz engine for Streamer.bot featuring a web control panel, an OBS overlay, Twitch chat voting, round history, and persistent leaderboards.
 
 It requires only **one C# Action and one Twitch chat message trigger**. No Node.js, Python, separate `.exe` application, external database, or hosting service is required.
 
 > [!IMPORTANT]
-> Version **2.1.0 BETA** is intended for testing in a local environment. Before using it during a live stream, back up your existing data and test your installation. The known HTTP `/DoAction` security limitation is explained in [Security and known limitations](#security-and-known-limitations).
+> Version **2.2.0** is intended for testing in a local environment. Before using it during a live stream, back up your existing data and test your installation. The known HTTP `/DoAction` security limitation is explained in [Security and known limitations](#security-and-known-limitations).
 
 ## Table of contents
 
