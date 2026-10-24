@@ -149,7 +149,7 @@ Cofanie i przeliczanie odtwarzają projekcję z zapisanych rozliczeń oraz bazy 
 
 Restart, odświeżenie panelu i ponowne ujawnienie nie przyznają drugi raz tej samej nagrody. Nowe statystyki nie są dawnymi polami streak z 1.3.0.
 
-W wersji 2.2.0 osiągnięcia są wbudowane. Tworzenie własnych osiągnięć w panelu, osobna komenda `!odznaki` oraz import i eksport katalogu osiągnięć nie są jeszcze dostępne.
+W wersji 2.2.0 osiągnięcia są wbudowane. Tworzenie własnych osiągnięć w panelu, osobna komenda `!odznaki` oraz import i eksport katalogu osiągnięć nie są jeszcze dostępne. **Jest to funkcja, która planuje dodać, więc taki mały spoiler czy coś xd**
 
 ## Pliki i wymagania
 
