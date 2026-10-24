@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src ws://127.0.0.1:* ws://localhost:*; img-src data:; font-src data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>LukiQuizEngine - Overlay 2.1.0 BETA</title>
+  <title>LukiQuizEngine - Overlay 2.2.0</title>
   <style>
     :root {
       --bg: rgba(10, 12, 21, 0.94);
@@ -69,7 +69,6 @@
     .empty-ranking { display:grid; flex:1; place-items:center; min-height:180px; padding:20px; color:var(--muted); font-size:15px; line-height:1.45; text-align:center; }
     .connection-warning { position:fixed; top:24px; left:50%; padding:10px 16px; border:1px solid rgba(255,95,124,.4); border-radius:999px; background:rgba(33,10,17,.88); color:#ffb3c1; font-size:14px; font-weight:800; transform:translateX(-50%); opacity:0; transition:opacity 200ms ease; }
     .connection-warning.show { opacity:1; }
-    /* V2 additions keep the V1 visual language. */
     .team-scores { margin-top:10px; display:grid; gap:5px; color:var(--muted); font-size:12px; font-weight:750; }
     .team-scores:empty { display:none; }
     .podium-card { padding:20px; filter:drop-shadow(var(--shadow)); }
@@ -127,7 +126,7 @@ function setOverlayLanguage(lang){overlayLanguage=lang==='en'?'en':'pl';document
 setOverlayLanguage(overlayLanguage);
 const UI_BUILD='PHoeniX', CLIENT_PATCH='QUPA';
 const RANKING_MUTATIONS=new Set(['setscore','resetscores','importscores','restoreimportbackup','restorebackup','restoresnapshot','reveal','rescore','undo']);
-const APP_VERSION='2.1.0',ACTION_NAME='QUIZ - Silnik',MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
+const APP_VERSION='2.2.0',ACTION_NAME='QUIZ - Silnik',MAX_SOCKET_MESSAGE_LENGTH=12*1024*1024;
 const LOOPBACK_HOSTS=new Set(['127.0.0.1','localhost']);
 const $=id=>document.getElementById(id);
 const overlayRoot=$('quiz-root'),questionEl=$('question'),answersEl=$('answers'),statusEl=$('status-pill'),timerEl=$('timer'),hintEl=$('hint'),voteCountEl=$('vote-count'),leadersEl=$('leaders'),emptyRankingEl=$('empty-ranking'),warningEl=$('connection-warning'),teamScoresEl=$('team-scores'),shell=$('shell'),podiumCard=$('podium-card'),podiumWinners=$('podium-winners'),topLabel=$('top-label');
