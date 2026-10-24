@@ -10,19 +10,19 @@ using System.Security.Cryptography;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-// LukiQuizEngine 2.1.0 BETA GIGA UPDATE V2
+// LukiQuizEngine 2.2.0
 public class CPHInline
 {
-    private const string AppVersion = "2.1.0";
-    private const string BuildLabel = "PHoeniX"; //oznaczenie identyfikatora, zmiana może wszystko zepsuć xdd
-    private const string EnginePatch = "QUPA"; // tak samo jak u góry
+    private const string AppVersion = "2.2.0";
+    private const string BuildLabel = "PHoeniX"; // don't change
+    private const string EnginePatch = "QUPA"; // don't change
     private const int Protocol = 1;
-    private const string PointsCommand = "!punkty"; // TO MOŻNA ZMIENIC, 
-    private const string RankingCommand = "!ranking"; // TO TEŻ można
-    private const string AdminCommand = "!quiz"; // NO I TO TEŻ można
-    private const string DataVariable = "localQuiz_data_v2"; // NIE 
-    private const string PublicVariable = "localQuiz_public_v2"; // NIE 
-    private const string SnapshotVariable = "localQuiz_snapshots_v2"; // NIE 
+    private const string PointsCommand = "!punkty"; // use panel.html to change this in options
+    private const string RankingCommand = "!ranking"; // use panel.html to change this in options
+    private const string AdminCommand = "!quiz"; // use panel.html to change this in options
+    private const string DataVariable = "localQuiz_data_v2"; // don't change
+    private const string PublicVariable = "localQuiz_public_v2"; // don't change
+    private const string SnapshotVariable = "localQuiz_snapshots_v2"; // don't change
     private const int MaxBytes = 8 * 1024 * 1024;
     private const int MaxImportedPayloadLength = 7500000;
     private const int MaxImportedScores = 25000;
@@ -30,7 +30,6 @@ public class CPHInline
     private const int MaxHistory = 100;
     private const int MaxArchiveCleanupItems = 100;
     private const int MaxSnapshotBytes = 32 * 1024 * 1024;
-    private static readonly bool AnnounceRoundEventsInChat = false; // zmiana na true włącza wiadomosci na czacie twitch, dotycząca przebiegu rundy
     private static readonly object StateLock = String.Intern("LukiQuizEngine.v2.transaction");
     private static readonly Dictionary<Type,Dictionary<string,PropertyInfo>> propertyCache=new Dictionary<Type,Dictionary<string,PropertyInfo>>();
     private static readonly Regex VoteRegex = new Regex(@"^!(1[0-2]|[1-9])$", RegexOptions.CultureInvariant);
@@ -124,7 +123,6 @@ public class CPHInline
                 }
                 if(new[]{"savearchive","listarchives","previewarchive","restorearchive","statusarchive","previewarchivecleanup","deletearchives"}.Contains(op)) {
                     Require(!String.IsNullOrWhiteSpace(wire) && String.IsNullOrWhiteSpace(ReadHostArg("message")) && String.IsNullOrWhiteSpace(ReadHostArg("userId")),"Archiwum rankingu jest dostępne wyłącznie przez panel.");
-                    // Reading an archive must not expire a round or run a state migration.
                     var previousData=quizData;string previousRaw=storedStateJson;
                     try {
                         quizData=ReadArchiveState();
@@ -133,6 +131,12 @@ public class CPHInline
                     }finally {
                         if(op!="restorearchive"||restoreArchive==null||restoreArchive.replayed){quizData=previousData;storedStateJson=previousRaw;}
                     }
+                    return true;
+                }
+                if(op=="getcompetitive") {
+                    var previousData=quizData;string previousRaw=storedStateJson;
+                    try {quizData=ReadArchiveState();BroadcastCompetitive();Broadcast(new{type="quiz-result",requestId=requestId,build=BuildLabel,operation=op,ok=true,revision=quizData.Revision});}
+                    finally {quizData=previousData;storedStateJson=previousRaw;}
                     return true;
                 }
                 EnsureTimer();
@@ -154,7 +158,7 @@ public class CPHInline
         }
         return true;
     }
-    private static bool IsReadOperation(string op) { return new[]{"sync","tick","getscores","getdata","diagnostics","exportbackup","exportbank","previewbackup","previewbank","openarchivefolder","listarchives","previewarchive","statusarchive","previewarchivecleanup"}.Contains(op); }
+    private static bool IsReadOperation(string op) { return new[]{"sync","tick","getscores","getdata","diagnostics","exportbackup","exportbank","previewbackup","previewbank","openarchivefolder","listarchives","previewarchive","statusarchive","previewarchivecleanup","getcompetitive"}.Contains(op); }
     private string SafeError(Exception ex) { return ex is InvalidOperationException ? ex.Message : "Nieprawidłowe dane lub błąd zapisu. Sprawdź Diagnostykę."; }
     private string ReadHostArg(string name) {
         object value;
@@ -210,7 +214,7 @@ public class CPHInline
             token = JToken.ReadFrom(reader);
             Require(!reader.Read(), "Dodatkowe dane za JSON.");
         }
-        CheckTypes(token, typeof(T), 0, typeof(T)==typeof(PanelRequest)||typeof(T)==typeof(Root)||typeof(T)==typeof(Backup)||typeof(T)==typeof(BankEnvelope)||typeof(T)==typeof(Question)||typeof(T)==typeof(QuizSet)||typeof(T)==typeof(Settings)||typeof(T)==typeof(RankingArchiveDocument)||typeof(T)==typeof(ResetArchiveIntent)||typeof(T)==typeof(RankingOperationIntent));
+        CheckTypes(token, typeof(T), 0, typeof(T)==typeof(PanelRequest)||typeof(T)==typeof(Root)||typeof(T)==typeof(Backup)||typeof(T)==typeof(BankEnvelope)||typeof(T)==typeof(Question)||typeof(T)==typeof(QuizSet)||typeof(T)==typeof(Settings)||typeof(T)==typeof(CompetitiveSettings)||typeof(T)==typeof(RankingArchiveDocument)||typeof(T)==typeof(ResetArchiveIntent)||typeof(T)==typeof(RankingOperationIntent));
         return token.ToObject<T>(JsonSerializer.Create(serializerOptions));
     }
     private void CheckTypes(JToken token, Type type, int depth, bool strictSchema) {
@@ -221,6 +225,7 @@ public class CPHInline
         if (type == typeof(string)) { Require(token.Type == JTokenType.String, "Oczekiwano tekstu."); return; }
         if (type == typeof(bool)) { Require(token.Type == JTokenType.Boolean, "Oczekiwano ON/OFF."); return; }
         if (type == typeof(int) || type == typeof(long)) { Require(token.Type == JTokenType.Integer, "Oczekiwano liczby całkowitej."); return; }
+        if (type == typeof(double)) {Require(token.Type==JTokenType.Integer||token.Type==JTokenType.Float,"Expected a numeric value.");double value=token.Value<double>();Require(!Double.IsNaN(value)&&!Double.IsInfinity(value),"Invalid numeric value.");return;}
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)) {
             Require(token.Type == JTokenType.Array && token.Count() <= 25000, "Nieprawidłowa lista.");
             foreach (var x in token) CheckTypes(x, type.GetGenericArguments()[0], depth+1,strictSchema); return;
@@ -242,7 +247,10 @@ public class CPHInline
         if(strictSchema || type==typeof(Root) || type==typeof(Backup) || type==typeof(BankEnvelope)) {
             foreach(string required in props.Keys) {
                 if(type==typeof(RankingArchiveDocument)&&new[]{"Name","ArchiveType","BaseScores","TotalPoints","ContentHash"}.Contains(required))continue;
-                if(type==typeof(Settings)&&new[]{"PanelLanguage","OverlayLanguage","SyncLanguage","VoteParsing","ArchiveRetention"}.Contains(required))continue;
+                if(type==typeof(Settings)&&new[]{"PanelLanguage","OverlayLanguage","SyncLanguage","VoteParsing","ArchiveRetention","PointsCommand","RankingCommand","AdminCommand","AnnounceRoundEventsInChat"}.Contains(required))continue;
+                if(type==typeof(Root)&&new[]{"Competitive","PreparedQueueIndex"}.Contains(required))continue;
+                if(type==typeof(Round)&&new[]{"Competitive","Summary"}.Contains(required))continue;
+                if(type==typeof(CompetitiveSettings)&&required=="SeasonsEnabled")continue;
                 Require(source.ContainsKey(required), "Niepełny schemat: "+required);
             }
         }
@@ -293,9 +301,14 @@ public class CPHInline
         }
         foreach (var a in r.Awards) { UserId(a.Key); Require(a.Value != null && r.Votes.ContainsKey(a.Key),"Nieprawidłowe award."); ValidateRange(a.Value.Points,0,2000,"Award"); ValidateScore(a.Value.Before,a.Key); ValidateScore(a.Value.After,a.Key); }
         Require(!r.Applied || (r.Status == "revealed" && r.Question.Mode == "QUIZ"),"Nieprawidłowe rozliczenie.");
+        if(r.Competitive!=null) {ValidateCompetitiveSettings(r.Competitive.Settings);Identifier(r.Competitive.SeasonId,true);}
+        if(r.Status=="revealed"||r.Status=="cancelled")UpdateRoundSummary(r);
     }
     private void ValidateSettings(Settings s) {
         Require(s != null && s.Keys != null && s.Overlay != null,"Puste ustawienia.");
+        var chatCommands=new[]{s.PointsCommand,s.RankingCommand,s.AdminCommand};
+        Require(chatCommands.All(command=>command!=null&&Regex.IsMatch(command,@"\A![A-Za-z][A-Za-z0-9_-]{0,31}\z")),"Invalid chat command format. Use ! plus 1-32 ASCII letters, digits, _ or -, starting with a letter.");
+        Require(chatCommands.Distinct(StringComparer.OrdinalIgnoreCase).Count()==chatCommands.Length,"Chat commands must be different (case-insensitive).");
         Require(new[]{"pl","en"}.Contains(s.PanelLanguage)&&new[]{"pl","en"}.Contains(s.OverlayLanguage),"Nieprawidłowy język interfejsu.");
         Require(new[]{"STRICT","WHITESPACE","ATTACHED"}.Contains(s.VoteParsing),"Nieprawidłowy tryb rozpoznawania głosów.");
         Require(s.ArchiveRetention!=null,"Brak zasad czyszczenia archiwów.");
@@ -326,6 +339,8 @@ public class CPHInline
         foreach(var t in d.TeamScores) { Identifier(t.Key); ValidateRange(t.Value,0,250000000000L,"Team score"); }
         foreach(var t in d.BaseTeamScores) { Identifier(t.Key); ValidateRange(t.Value,0,250000000000L,"Base team score"); }
         if(d.Draft!=null) ValidateQuestion(d.Draft,true);
+        ValidateCompetitive(d.Competitive); ValidateRange(d.PreparedQueueIndex,-1,d.Queue==null?0:d.Queue.Count,"Prepared queue index");
+        foreach(var round in d.History.Concat(d.Current==null?new Round[0]:new[]{d.Current}))if(round.Competitive!=null&&round.Competitive.SeasonId!="")Require(round.Competitive.Settings.SeasonsEnabled&&d.Competitive.Seasons.Any(x=>x.Id==round.Competitive.SeasonId),"Round references an unknown season.");
         ValidateSettings(d.Settings); Identifier(d.QueueSetId,true); ValidateRange(d.QueueIndex,-1,d.Queue==null?0:d.Queue.Count,"Queue index");
         if(d.Queue!=null) { Require(d.Queue.Count<=200,"Queue limit"); foreach(var q in d.Queue) ValidateQuestion(q); }
     }
@@ -439,7 +454,6 @@ public class CPHInline
         Require(JToken.DeepEquals(JToken.Parse(new UTF8Encoding(false,true).GetString(bytes)),JToken.Parse(expected)), "Nieprawidłowy JSON archiwizacji.");
     }
     private void WriteArchiveFile(string path, string json) {
-        // Immutable publication: a partial file is never an archive or a receipt.
         JToken.Parse(json);
         CheckArchiveFilePath(path);
         string temporary=path+"."+Id()+".tmp";
@@ -484,7 +498,6 @@ public class CPHInline
         if(reused) {
             path=SafeArchivePath(directory,Path.GetFileNameWithoutExtension(matches[0]));var existing=ReadRankingArchive(path);
             expected.ArchiveId=existing.ArchiveId;expected.CreatedAt=existing.CreatedAt;expected.CreatedAtUtc=existing.CreatedAtUtc;
-            // Historical release labels do not change the archived source state. All other fields must still match.
             expected.AppVersion=existing.AppVersion;expected.Build=existing.Build;expected.EnginePatch=existing.EnginePatch;
             if(existing.ContentHash!=null)expected.ContentHash=ArchiveHash(JsonConvert.SerializeObject(expected));
             Require(JToken.DeepEquals(JToken.FromObject(existing),JToken.FromObject(expected)),"Istniejące archiwum nie zawiera kompletnych wyników. Reset nie został wykonany.");
@@ -522,7 +535,6 @@ public class CPHInline
         string directory;
         try {directory=SafeArchiveDirectory(true);}
         catch(Exception ex) {throw new InvalidOperationException("Nie można otworzyć lokalnego katalogu archiwów. Reset nie został wykonany. "+SafeError(ex));}
-        // This lock serializes resets across local engine instances, not Windows files and Streamer.bot persistence.
         string lockPath=Path.Combine(directory,".reset.lock");CheckArchiveFilePath(lockPath);
         using(var resetLock=new FileStream(lockPath,FileMode.OpenOrCreate,FileAccess.ReadWrite,FileShare.None)) {
             CheckArchiveFilePath(lockPath);
@@ -732,7 +744,7 @@ public class CPHInline
     private void ValidateRankingArchive(RankingArchiveDocument archive,string path) {
         Require(archive!=null&&archive.Format=="LukiQuizRankingArchive"&&archive.Schema==1&&archive.Scores!=null&&archive.Teams!=null&&archive.Members!=null&&archive.TeamScores!=null&&archive.BaseTeamScores!=null,"Niepełne archiwum rankingu.");
         Require(IsRankingArchiveId(archive.ArchiveId)&&archive.ArchiveId==Path.GetFileNameWithoutExtension(path)&&archive.Users==archive.Scores.Count,"Niepoprawne ID lub liczba wyników archiwum.");
-        Require(new[]{"2.0.0","2.0.1","2.0.2","2.1.0"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
+        Require(new[]{"2.0.0","2.0.1","2.0.2","2.1.0","2.2.0"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
         ValidateRange(archive.CreatedAt,1,4102444800000L,"Data archiwum");ValidateRange(archive.Epoch,0,Int32.MaxValue-1,"Archive epoch");ValidateRange(archive.Revision,0,Int32.MaxValue-1,"Archive revision");
         DateTime created;Require(DateTime.TryParse(archive.CreatedAtUtc,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out created)&&created.Kind==DateTimeKind.Utc&&Math.Abs((created-new DateTime(1970,1,1,0,0,0,DateTimeKind.Utc)).TotalMilliseconds-archive.CreatedAt)<2000,"Nieprawidłowa data archiwum.");
         Require(Regex.IsMatch(archive.SourceStateHash??"",@"^[a-f0-9]{64}$"),"Nieprawidłowy SourceStateHash archiwum.");
@@ -803,7 +815,6 @@ public class CPHInline
             Broadcast(new{type="quiz-archive-preview",appVersion=AppVersion,archive=ArchiveInfo(archive),archiveHash=hash,offset=offset,limit=limit,total=archive.Users,hasMore=offset+limit<archive.Users,scores=SortScores(archive.Scores).Skip(offset).Take(limit).Select((x,i)=>new{rank=offset+i+1,userId=x.UserId,userName=x.UserName,points=x.Points,correctAnswers=x.CorrectAnswers,answeredQuestions=x.AnsweredQuestions,lastUpdatedAt=x.LastUpdatedAt}).ToList(),restoreAllowed=teams&&finished,teamWarning=teams?"":"Definicje drużyn, przypisania widzów lub tryb drużynowy różnią się od archiwum. Przywracanie jest zablokowane."});return;
         }
         if(op=="statusarchive") {ResolveRankingRestore(directory,GetStringArg("operationId"),null);return;}
-        // Share the reset lock with the existing automatic archive transaction.
         string lockPath=Path.Combine(directory,".reset.lock");CheckArchiveFilePath(lockPath);
         using(var transaction=new FileStream(lockPath,FileMode.OpenOrCreate,FileAccess.ReadWrite,FileShare.None)) {
             CheckArchiveFilePath(lockPath);
@@ -871,7 +882,6 @@ public class CPHInline
         Require(LoadSnapshots().Any(x=>x.Reason=="before ranking archive restore"&&String.Equals(x.Data,sourceRaw,StringComparison.Ordinal)),"Nie potwierdzono zapisu snapshotu. Ranking pozostaje bez zmian.");
         var source=quizData;quizData=Copy(source);
         quizData.TeamScores=Copy(archive.TeamScores);NewEpoch(Copy(archive.Scores));quizData.BaseTeamScores=Copy(archive.TeamScores);
-        // Existing history retains its old epoch and cannot award these points again.
         quizData.ImportBackup.Clear();quizData.HasImportBackup=false;quizData.Revision++;
         Validate(quizData);string targetRaw=JsonConvert.SerializeObject(quizData);
         var intent=new RankingOperationIntent{RequestId=requestId,Operation="restorearchive",ArgumentsHash=argumentsHash,ArchiveId=id,ArchiveHash=hash,ArchiveName=ArchiveInfo(archive).name,Users=archive.Users,BackupArchiveId=backup.ArchiveId,BackupHash=backupHash,SourceHash=sourceHash,TargetHash=ArchiveHash(targetRaw),TargetEpoch=quizData.Epoch,TargetRevision=quizData.Revision};
@@ -919,7 +929,6 @@ public class CPHInline
                     long committedSize=new FileInfo(path+".committed.json").Length;Require(committedSize<=65536&&(readBytes+=committedSize)<=64L*1024*1024&&File.ReadAllText(path+".committed.json",new UTF8Encoding(false,true))==raw,"Niezgodne potwierdzenie operacji. Czyszczenie jest zablokowane.");continue;
                 }
                 JObject value;try{value=JObject.Parse(raw);}catch{throw new InvalidOperationException("Nieprawidłowe potwierdzenie operacji. Czyszczenie jest zablokowane.");}
-                // v2.0.2 manual saves have no completion marker. Their verified published file is their completion evidence.
                 if((string)value["Operation"]=="savearchive"&&IsRankingArchiveId((string)value["ArchiveId"])) {
                     string savedPath=SafeArchivePath(directory,(string)value["ArchiveId"]);
                     if(File.Exists(savedPath))Require((readBytes+=new FileInfo(savedPath).Length)<=64L*1024*1024,"Zbyt wiele danych potwierdzeń operacji. Czyszczenie jest zablokowane.");
@@ -972,7 +981,6 @@ public class CPHInline
     private ArchiveCleanupResult ApplyArchiveCleanupPlan(string directory,ArchiveCleanupPlan plan,bool automatic) {
         Require(plan.expiresAt>=Now(),"Podgląd czyszczenia wygasł. Przygotuj go ponownie.");
         var selected=plan.items.Select(x=>x.archiveId).ToList();
-        // A fresh complete catalog and full hash validation precede every deletion.
         var fresh=BuildArchiveCleanupPlan(directory,new ArchiveCleanupRequest{mode="manual",archiveIds=selected},"");
         Require(fresh.items.Count==plan.items.Count&&fresh.items.All(x=>plan.items.Any(p=>p.archiveId==x.archiveId&&p.archiveHash==x.archiveHash&&p.sizeBytes==x.sizeBytes)),"Archiwum zmieniło się od podglądu. Przygotuj go ponownie.");
         bool truncated;int skipped;var catalog=ScanArchiveMetadata(directory,out truncated,out skipped);
@@ -1008,7 +1016,6 @@ public class CPHInline
         catch(Exception ex){CPH.LogWarn("[LukiQuiz V2] Automatic archive cleanup skipped: "+SafeError(ex));}
     }
     private ArchiveMetadata ReadArchiveMetadata(string path) {
-        // Skip result dictionaries instead of materializing every archived ranking during a refresh.
         var scalars=new JObject();var names=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var allowed=new HashSet<string>(typeof(RankingArchiveDocument).GetProperties().Select(x=>x.Name),StringComparer.OrdinalIgnoreCase);
         using(var stream=new StreamReader(path,new UTF8Encoding(false,true)))using(var reader=new JsonTextReader(stream)) {
@@ -1028,7 +1035,7 @@ public class CPHInline
         var archive=scalars.ToObject<RankingArchiveDocument>();Require(archive.ArchiveId==Path.GetFileNameWithoutExtension(path)&&IsRankingArchiveId(archive.ArchiveId),"Niepoprawne ID archiwum.");
         ValidateRange(archive.Users,0,25000,"Liczba wyników");ValidateRange(archive.CreatedAt,1,4102444800000L,"Data archiwum");ValidateRange(archive.Epoch,0,Int32.MaxValue-1,"Epoch archiwum");ValidateRange(archive.Revision,0,Int32.MaxValue-1,"Revision archiwum");
         DateTime created;Require(DateTime.TryParse(archive.CreatedAtUtc,System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.RoundtripKind,out created)&&created.Kind==DateTimeKind.Utc&&Math.Abs((created-new DateTime(1970,1,1,0,0,0,DateTimeKind.Utc)).TotalMilliseconds-archive.CreatedAt)<2000,"Nieprawidłowa data archiwum.");
-        Require(new[]{"2.0.0","2.0.1","2.0.2","2.1.0"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
+        Require(new[]{"2.0.0","2.0.1","2.0.2","2.1.0","2.2.0"}.Contains(archive.AppVersion)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.Build)&&new[]{"FC1","STYLE4","PHoeniX","QUPA"}.Contains(archive.EnginePatch),"Nieobsługiwane oznaczenie wersji archiwum.");
         Require(Regex.IsMatch(archive.SourceStateHash??"",@"^[a-f0-9]{64}$"),"Nieprawidłowy SourceStateHash archiwum.");
         string type=ArchiveType(archive);Require(new[]{"automatic","manual","safety"}.Contains(type)&&archive.ArchiveId.StartsWith(type=="automatic"?"ranking-":type+"-",StringComparison.Ordinal),"Typ archiwum.");
         if(type=="automatic")Require(archive.ArchiveId.EndsWith("-"+archive.SourceStateHash,StringComparison.Ordinal),"Niezgodny SourceStateHash archiwum.");
@@ -1064,10 +1071,10 @@ public class CPHInline
             quizData=Copy(previousData);
             if(!Expire()) {quizData=previousData;return false;}
             SaveState();
+            if(quizData.Current!=null&&quizData.Current.Status=="revealed")AnnounceRevealedRound(quizData.Current);
             failedExpirationStateJson=null;expirationError="";
             return true;
         } catch(Exception ex) {
-            // A host write may have committed before throwing. Reload the actual stored state.
             quizData=null;quizData=LoadState();
             failedExpirationStateJson=previousRaw;
             expirationError="Automatyczne zakończenie rundy zgłosiło błąd: "+SafeError(ex)+" Automatyczne ponawianie dla tego stanu jest wstrzymane. Odczyt danych i diagnostyka pozostają dostępne. Przed przywróceniem kopii anuluj nierozliczoną rundę.";
@@ -1091,8 +1098,9 @@ public class CPHInline
     private void Start(Question q) {
         EnsureRoundFinished(); ValidateQuestion(q); q=Copy(q); for(int i=0;i<q.Options.Count;i++)q.Options[i].AuthorIndex=i+1; ResolvePartial(q);
         if(q.Shuffle) { var random=new Random(); for(int i=q.Options.Count-1;i>0;i--) { int j=random.Next(i+1); var tmp=q.Options[i]; q.Options[i]=q.Options[j]; q.Options[j]=tmp; } }
-        quizData.Podium=false;quizData.OverlayVisible=true; quizData.Current=new Round {Id=Id(),Question=q,StartedAt=Now(),ClockAt=Now(),ClosesAt=q.Duration>0?Now()+q.Duration*1000L:0,Epoch=quizData.Epoch};
-        quizData.Revision++; SaveState(); BroadcastState(); if(AnnounceRoundEventsInChat)SendChat("Quiz: "+q.Text+" - głosuj !1-!"+q.Options.Count);
+        quizData.Podium=false;quizData.OverlayVisible=true; quizData.Current=new Round {Id=Id(),Question=q,StartedAt=Now(),ClockAt=Now(),ClosesAt=q.Duration>0?Now()+q.Duration*1000L:0,Epoch=quizData.Epoch,Competitive=new CompetitiveRound {Settings=Copy(quizData.Competitive.Settings)}};
+        quizData.PreparedQueueIndex=-1;
+        quizData.Revision++; SaveState(); BroadcastState(); if(quizData.Settings.AnnounceRoundEventsInChat)SendChat("Quiz: "+q.Text+" - głosuj !1-!"+q.Options.Count);
     }
     private void StartQuiz(string question,string answersJson,int durationSeconds,bool announce) {
         var texts=Read<List<string>>(answersJson);
@@ -1110,7 +1118,7 @@ public class CPHInline
             } else r.RemainingMs=0;
             r.ClockAt=now; r.ClosesAt=0; r.Paused=false; r.Status="locked";
         }
-        quizData.Revision++; SaveState(); BroadcastState();if(announce&&AnnounceRoundEventsInChat)SendChat("Quiz: głosowanie zamknięte.");
+        quizData.Revision++; SaveState(); BroadcastState();if(announce&&quizData.Settings.AnnounceRoundEventsInChat)SendChat("Quiz: głosowanie zamknięte.");
     }
     private void ReopenQuiz(bool announce) {
         var r=quizData.Current; Require(r!=null&&r.Status=="locked","Ponownie otworzyć można tylko zamknięte głosowanie przed reveal.");
@@ -1123,8 +1131,131 @@ public class CPHInline
             r.ClosesAt=0; r.RemainingMs=0;
         }
         quizData.Revision++; SaveState(); BroadcastState();
-        if(announce&&AnnounceRoundEventsInChat)SendChat("Quiz: głosowanie ponownie otwarte.");
+        if(announce&&quizData.Settings.AnnounceRoundEventsInChat)SendChat("Quiz: głosowanie ponownie otwarte.");
     }
+    private List<AchievementDefinition> AchievementDefinitions() {
+        return new List<AchievementDefinition> {
+            new AchievementDefinition{Id="first-correct",Metric="correct",Threshold=1},
+            new AchievementDefinition{Id="correct-10",Metric="correct",Threshold=10},
+            new AchievementDefinition{Id="correct-25",Metric="correct",Threshold=25},
+            new AchievementDefinition{Id="correct-50",Metric="correct",Threshold=50},
+            new AchievementDefinition{Id="streak-3",Metric="streak",Threshold=3,RequiresStreak=true},
+            new AchievementDefinition{Id="streak-5",Metric="streak",Threshold=5,RequiresStreak=true},
+            new AchievementDefinition{Id="streak-10",Metric="streak",Threshold=10,RequiresStreak=true},
+            new AchievementDefinition{Id="participation-10",Metric="participation",Threshold=10},
+            new AchievementDefinition{Id="participation-50",Metric="participation",Threshold=50}
+        };
+    }
+    private void ValidateCompetitiveSettings(CompetitiveSettings settings) {
+        Require(settings!=null&&settings.StreakBonuses!=null,"Missing competitive settings.");
+        Require(settings.StreakBonuses.Count<=20,"At most 20 streak thresholds are allowed.");
+        int previous=0;foreach(var bonus in settings.StreakBonuses) {
+            Require(bonus!=null,"Missing streak threshold.");ValidateRange(bonus.Threshold,1,10000,"Streak threshold");
+            ValidateRange(bonus.Points,0,1000,"Streak bonus");Require(bonus.Threshold>previous,"Streak thresholds must be unique and ascending.");previous=bonus.Threshold;
+        }
+    }
+    private void ValidateCompetitiveProjection(CompetitiveProjection projection) {
+        Require(projection!=null&&projection.Users!=null&&projection.SeasonScores!=null,"Missing competitive projection.");
+        Require(projection.Users.Count<=25000&&projection.SeasonScores.Count<=1,"Competitive data limit reached.");
+        var definitions=AchievementDefinitions().Select(x=>x.Id).ToList();
+        foreach(var item in projection.Users) {
+            UserId(item.Key);var user=item.Value;Require(user!=null&&user.UserId==item.Key&&user.Achievements!=null,"Invalid competitive viewer.");
+            ValidateText(user.UserName,1,80,"Competitive viewer");ValidateRange(user.CurrentStreak,0,100000000,"Current streak");
+            ValidateRange(user.BestStreak,user.CurrentStreak,100000000,"Best streak");ValidateRange(user.StreakCorrectAnswers,user.BestStreak,100000000,"Streak correct answers");
+            ValidateRange(user.AchievementRounds,0,100000000,"Achievement participation");ValidateRange(user.AchievementCorrectAnswers,0,user.AchievementRounds,"Achievement correct answers");
+            ValidateRange(user.AchievementStreak,0,user.AchievementCorrectAnswers,"Achievement streak");Require(user.Achievements.Count<=definitions.Count,"Achievement limit reached.");
+            foreach(var achievement in user.Achievements){Require(definitions.Contains(achievement.Key),"Unknown achievement.");ValidateRange(achievement.Value,1,4102444800000L,"Achievement timestamp");}
+        }
+        foreach(var season in projection.SeasonScores){Identifier(season.Key);Require(season.Value!=null&&season.Value.Count<=25000,"Season score limit reached.");foreach(var user in season.Value)ValidateScore(user.Value,user.Key);}
+    }
+    private void ValidateCompetitive(CompetitiveState competitive) {
+        Require(competitive!=null&&competitive.Schema==1&&competitive.Seasons!=null&&competitive.FrozenRounds!=null,"Invalid competitive state.");
+        Identifier(competitive.DataId);Identifier(competitive.ActiveSeasonId,true);ValidateCompetitiveSettings(competitive.Settings);
+        ValidateCompetitiveProjection(competitive.Base);ValidateCompetitiveProjection(competitive.Stats);
+        Require(competitive.Seasons.Count<=100&&competitive.FrozenRounds.Count<=MaxHistory,"Season or frozen history limit reached.");
+        var ids=new HashSet<string>();int active=0;
+        foreach(var season in competitive.Seasons) {
+            Require(season!=null&&season.Scores!=null&&season.Winners!=null,"Missing season.");Identifier(season.Id);Require(ids.Add(season.Id),"Duplicate season ID.");
+            ValidateText(season.Name,1,80,"Season name");Require(season.Kind=="season"||season.Kind=="event","Invalid season kind.");
+            Require(new[]{"created","active","closed"}.Contains(season.Status),"Invalid season status.");Identifier(season.CreateRequestId,true);
+            ValidateRange(season.CreatedAt,1,4102444800000L,"Season created");ValidateRange(season.StartedAt,0,4102444800000L,"Season start");ValidateRange(season.EndedAt,0,4102444800000L,"Season end");
+            if(season.Status=="created")Require(season.StartedAt==0&&season.EndedAt==0&&season.Scores.Count==0&&season.Winners.Count==0,"A created season cannot contain results.");
+            if(season.Status=="active"){active++;Require(season.Id==competitive.ActiveSeasonId&&season.StartedAt>0&&season.EndedAt==0&&season.Scores.Count==0&&season.Winners.Count==0,"Invalid active season.");}
+            if(season.Status=="closed")Require(season.StartedAt>0&&season.EndedAt>=season.StartedAt,"Invalid closed season timestamps.");
+            Require(season.Scores.Count<=25000&&season.Winners.Count<=25000,"Season score limit reached.");foreach(var score in season.Scores)ValidateScore(score.Value,score.Key);
+            var winnerIds=new HashSet<string>();int best=season.Scores.Count==0?0:season.Scores.Values.Max(x=>x.Points);
+            foreach(var winner in season.Winners){Require(winner!=null&&season.Scores.ContainsKey(winner.UserId)&&winnerIds.Add(winner.UserId),"Invalid season winner.");ValidateText(winner.UserName,1,80,"Winner name");ValidateRange(winner.Points,0,100000000,"Winner points");Require(season.Scores[winner.UserId].Points==winner.Points&&winner.Points==best&&season.Scores[winner.UserId].UserName==winner.UserName,"Winner score mismatch.");}
+            if(season.Status=="closed")Require(winnerIds.SetEquals(season.Scores.Values.Where(x=>x.Points==best).Select(x=>x.UserId)),"Season winners are incomplete.");
+        }
+        Require(active==(competitive.ActiveSeasonId==""?0:1),"Active season mismatch.");
+        foreach(var key in competitive.Base.SeasonScores.Keys.Concat(competitive.Stats.SeasonScores.Keys))Require(key==competitive.ActiveSeasonId,"A projection references an inactive season.");
+        var frozen=new HashSet<string>();foreach(string id in competitive.FrozenRounds){Identifier(id);Require(frozen.Add(id),"Duplicate frozen round ID.");}
+    }
+    private CompetitiveUser EnsureCompetitiveUser(CompetitiveProjection projection,string id,string name) {
+        CompetitiveUser user;if(projection.Users.TryGetValue(id,out user)){user.UserName=name;return user;}
+        Require(projection.Users.Count<25000,"Competitive viewer limit reached.");
+        user=new CompetitiveUser{UserId=id,UserName=name};projection.Users[id]=user;return user;
+    }
+    private Dictionary<string,int> ApplyCompetitiveRound(Round round,CompetitiveProjection projection) {
+        var bonuses=new Dictionary<string,int>();var snapshot=round.Competitive;
+        if(snapshot==null||!round.Applied||round.Question.Mode!="QUIZ")return bonuses;
+        var settings=snapshot.Settings;
+        if(settings.StreakEnabled)foreach(var user in projection.Users.Values.Where(x=>!round.Votes.ContainsKey(x.UserId))){user.CurrentStreak=0;user.AchievementStreak=0;}
+        foreach(var vote in round.Votes.OrderBy(x=>x.Key,StringComparer.Ordinal)) {
+            var option=round.Question.Options.First(x=>x.Id==vote.Value.OptionId);int bonus=0;
+            if(settings.StreakEnabled||settings.AchievementsEnabled) {
+                var user=EnsureCompetitiveUser(projection,vote.Key,vote.Value.Name);
+                if(settings.StreakEnabled) {
+                    if(option.Correct){user.CurrentStreak=checked(user.CurrentStreak+1);user.StreakCorrectAnswers=checked(user.StreakCorrectAnswers+1);user.BestStreak=Math.Max(user.BestStreak,user.CurrentStreak);}
+                    else {user.CurrentStreak=0;user.AchievementStreak=0;}
+                    if(option.Correct){var threshold=settings.StreakBonuses.FirstOrDefault(x=>x.Threshold==user.CurrentStreak);if(threshold!=null)bonus=Math.Min(threshold.Points,Math.Max(0,2000-Points(round.Question,option,vote.Value)));}
+                }
+                if(settings.AchievementsEnabled) {
+                    user.AchievementRounds=checked(user.AchievementRounds+1);if(option.Correct)user.AchievementCorrectAnswers=checked(user.AchievementCorrectAnswers+1);
+                    if(settings.StreakEnabled)user.AchievementStreak=option.Correct?Math.Min(user.CurrentStreak,checked(user.AchievementStreak+1)):0;
+                    foreach(var definition in AchievementDefinitions()) {
+                        if(definition.RequiresStreak&&!settings.StreakEnabled)continue;
+                        int metric=definition.Metric=="correct"?user.AchievementCorrectAnswers:definition.Metric=="participation"?user.AchievementRounds:user.AchievementStreak;
+                        if(metric>=definition.Threshold&&!user.Achievements.ContainsKey(definition.Id))user.Achievements[definition.Id]=round.EndedAt;
+                    }
+                }
+            }
+            if(bonus>0)bonuses[vote.Key]=bonus;
+        }
+        return bonuses;
+    }
+    private void UpdateRoundSummary(Round round) {
+        var summary=new RoundSummary{Participants=round.Votes.Count,AcceptedVotes=round.Votes.Count,Status=round.Status=="revealed"&&round.Question.Mode=="QUIZ"&&!round.Applied?"undone":round.Status};
+        if(round.Status=="revealed"&&round.Question.Mode=="QUIZ") {
+            summary.CorrectAnswers=round.Votes.Count(x=>round.Question.Options.Any(o=>o.Id==x.Value.OptionId&&o.Correct));
+            summary.CorrectPercent=round.Votes.Count==0?(double?)null:Math.Round(summary.CorrectAnswers.Value*100.0/round.Votes.Count,2);
+            summary.TotalPoints=round.Applied?round.Awards.Values.Sum(x=>(long)x.Points):0;
+            summary.TopPoints=round.Applied&&round.Awards.Count>0?round.Awards.Values.Max(x=>x.Points):0;
+        }
+        round.Summary=summary;
+    }
+    private void PrepareNext() {
+        EnsureRoundFinished();Require(quizData.Queue!=null&&quizData.Queue.Count>0,"Load a question set first.");
+        Require(GetStringArg("expectedSetId")==quizData.QueueSetId,"The loaded set changed. Refresh the panel.");
+        int expected=GetIntArg("expectedQueueIndex",Int32.MinValue);
+        if(quizData.PreparedQueueIndex>=0&&quizData.PreparedQueueIndex==quizData.QueueIndex){Require(expected==quizData.QueueIndex||expected==quizData.QueueIndex-1,"The queue changed. Refresh the panel.");return;}
+        Require(expected==quizData.QueueIndex,"The queue changed. Refresh the panel.");int next=quizData.QueueIndex+1;
+        Require(next<quizData.Queue.Count,"The question set is finished.");
+        quizData.QueueIndex=next;quizData.PreparedQueueIndex=next;quizData.Draft=Copy(quizData.Queue[next]);quizData.Podium=false;
+    }
+    private object CompetitiveSettingsPayload(CompetitiveSettings settings) {return new{StreakEnabled=settings.StreakEnabled,AchievementsEnabled=settings.AchievementsEnabled,StreakBonuses=settings.StreakBonuses};}
+    private object CompetitiveProgress(CompetitiveState competitive) {return new{settings=CompetitiveSettingsPayload(competitive.Settings),baseUsers=competitive.Base.Users,users=competitive.Stats.Users};}
+    private void BroadcastCompetitive() {Broadcast(new{type="quiz-competitive",settings=CompetitiveSettingsPayload(quizData.Competitive.Settings),catalog=AchievementDefinitions(),users=quizData.Competitive.Stats.Users});}
+    private bool HasCompetitiveData(CompetitiveState competitive) {
+        return competitive.Base.Users.Count>0||competitive.Stats.Users.Count>0||competitive.Settings.StreakEnabled||competitive.Settings.AchievementsEnabled;
+    }
+    private void CheckCompetitiveRestore(Root restored) {
+        var current=quizData.Competitive;
+        if(!HasCompetitiveData(current))return;
+        Require(restored.Competitive.DataId==current.DataId,"This backup belongs to older or different competitive data. Restore was stopped to preserve streaks and achievements.");
+        Require(JsonConvert.SerializeObject(CompetitiveProgress(restored.Competitive))==JsonConvert.SerializeObject(CompetitiveProgress(current)),"This backup conflicts with current competitive progress. Restore was stopped to preserve streaks and achievements.");
+    }
+
     private void Reveal(Round r,Question config) {
         Require(r.Status=="open"||r.Status=="locked","Runda już rozliczona/anulowana.");
         if(config!=null) {
@@ -1134,14 +1265,17 @@ public class CPHInline
         Require(r.Question.Mode=="POLL"||r.Question.Options.Any(o=>o.Correct),"Wskaż co najmniej jedną poprawną odpowiedź.");
         r.ElapsedMs=Elapsed(r); r.ClockAt=Now(); r.Status="revealed"; r.EndedAt=Now(); r.Applied=r.Question.Mode=="QUIZ"; r.Legacy=false;
         Require(!quizData.History.Any(x=>x.Id==r.Id),"Round ID już w historii.");
-        quizData.History.Add(Copy(r)); Replay(); Compact(); quizData.Current=Copy(quizData.History.Last());Compact();if(AnnounceRoundEventsInChat)SendChat(r.Question.Mode=="POLL"?"Ankieta zakończona.":"Quiz: wynik ujawniony, punkty przyznane.");
+        quizData.History.Add(Copy(r)); Replay(); Compact(); quizData.Current=Copy(quizData.History.Last());Compact();
+    }
+    private void AnnounceRevealedRound(Round r) {
+        if(r!=null&&r.Status=="revealed"&&quizData.Settings.AnnounceRoundEventsInChat)SendChat(r.Question.Mode=="POLL"?"Ankieta zakończona.":"Quiz: wynik ujawniony, punkty przyznane.");
     }
     private void RevealAnswer(int correctIndex,int full,int partial,string mode,string partialJson,bool announce) {
         Require(quizData.Current!=null,"Brak rundy."); var q=Copy(quizData.Current.Question); ValidateRange(correctIndex,1,q.Options.Count,"Poprawna");
         q.FullPoints=full; q.PartialPoints=partial; q.Scoring=mode=="manual"?"manual":"adjacent";
         var indices=Read<List<int>>(partialJson); foreach(var o in q.Options) {o.Correct=false;o.Partial=false;o.Points=null;}
         q.Options[correctIndex-1].Correct=true; foreach(int n in indices) {ValidateRange(n,1,q.Options.Count,"Partial index");q.Options[n-1].Partial=true;}
-        Reveal(quizData.Current,q); quizData.Revision++; SaveState(); BroadcastState(); BroadcastScores();
+        Reveal(quizData.Current,q); quizData.Revision++; SaveState(); BroadcastState(); BroadcastScores(); AnnounceRevealedRound(quizData.Current);
     }
     private Dictionary<string,ScoreEntry> LoadScores() { return quizData.Scores; }
     private List<ScoreEntry> SortScores(Dictionary<string,ScoreEntry> scores) {return scores.Values.OrderByDescending(x=>x.Points).ThenByDescending(x=>x.CorrectAnswers).ThenBy(x=>x.AnsweredQuestions).ThenBy(x=>x.UserName,StringComparer.OrdinalIgnoreCase).ThenBy(x=>x.UserId,StringComparer.Ordinal).ToList();}
@@ -1157,11 +1291,11 @@ public class CPHInline
         if(q.Speed&&o.Correct) p+=v.ElapsedMs<=5000?q.SpeedFast:v.ElapsedMs<=10000?q.SpeedSlow:0;
         return p;
     }
-    private void ApplyRound(Round r,Dictionary<string,ScoreEntry> scores,Dictionary<string,long> teams) {
+    private void ApplyRound(Round r,Dictionary<string,ScoreEntry> scores,Dictionary<string,long> teams,Dictionary<string,int> competitiveBonuses=null) {
         r.Awards.Clear(); if(!r.Applied || r.Question.Mode!="QUIZ") return;
         foreach(var v in r.Votes.OrderBy(x=>x.Key,StringComparer.Ordinal)) {
             ScoreEntry e=EnsureScore(scores,v.Key,v.Value.Name); var before=Copy(e); var o=r.Question.Options.First(x=>x.Id==v.Value.OptionId);
-            int points=Points(r.Question,o,v.Value); e.UserName=v.Value.Name; e.Points=checked(e.Points+points); e.AnsweredQuestions++;
+            int bonus;int points=Points(r.Question,o,v.Value)+(competitiveBonuses!=null&&competitiveBonuses.TryGetValue(v.Key,out bonus)?bonus:0); e.UserName=v.Value.Name; e.Points=checked(e.Points+points); e.AnsweredQuestions++;
             if(o.Correct)e.CorrectAnswers++;
             e.LastUpdatedAt=r.EndedAt; r.Awards[v.Key]=new Award {Points=points,Correct=o.Correct,Before=before,After=Copy(e)};
             if(!String.IsNullOrEmpty(v.Value.TeamId)) {if(!teams.ContainsKey(v.Value.TeamId))teams[v.Value.TeamId]=0;teams[v.Value.TeamId]+=points;}
@@ -1169,28 +1303,36 @@ public class CPHInline
     }
     private void Replay() {
         var scores=Copy(quizData.BaseScores);var teams=Copy(quizData.BaseTeamScores);
-        foreach(var r in quizData.History.Where(x=>x.Epoch==quizData.Epoch)) ApplyRound(r,scores,teams);
-        quizData.Scores=scores;quizData.TeamScores=teams;
+        var competitive=Copy(quizData.Competitive.Base);
+        competitive.SeasonScores=Copy(quizData.Competitive.Stats.SeasonScores);
+        foreach(var r in quizData.History) {
+            var bonuses=ApplyCompetitiveRound(r,competitive);
+            if(r.Epoch==quizData.Epoch)ApplyRound(r,scores,teams,bonuses);
+            UpdateRoundSummary(r);
+        }
+        quizData.Scores=scores;quizData.TeamScores=teams;quizData.Competitive.Stats=competitive;
     }
     private void Compact() {
         while(quizData.History.Count>MaxHistory || (quizData.History.Count>1 && Encoding.UTF8.GetByteCount(JsonConvert.SerializeObject(quizData))>6*1024*1024)) {
-            var r=quizData.History[0]; if(r.Epoch==quizData.Epoch) ApplyRound(r,quizData.BaseScores,quizData.BaseTeamScores);quizData.History.RemoveAt(0);
+            var r=quizData.History[0];var bonuses=ApplyCompetitiveRound(r,quizData.Competitive.Base);if(r.Epoch==quizData.Epoch) ApplyRound(r,quizData.BaseScores,quizData.BaseTeamScores,bonuses);quizData.History.RemoveAt(0);
         }
     }
     private void Undo() {
         EnsureRoundFinished(); var r=quizData.History.LastOrDefault(x=>x.Applied && x.Epoch==quizData.Epoch && !x.Legacy);
         Require(r!=null,"Brak wyniku możliwego do cofnięcia w bieżącej epoce.");
         Require(GetStringArg("roundId")==r.Id,"Wynik zmienił się - odśwież historię.");
+
         r.Applied=false; Replay(); if(quizData.Current!=null&&quizData.Current.Id==r.Id)quizData.Current=Copy(r);
     }
     private void Rescore() {
         EnsureRoundFinished();var r=quizData.History.FirstOrDefault(x=>x.Id==GetStringArg("roundId"));
         Require(r!=null && r.Epoch==quizData.Epoch && !r.Legacy && r.Question.Mode=="QUIZ","Ten wynik jest archiwalny/POLL i nie może być przeliczony.");
+
         var q=Read<Question>(GetStringArg("payloadJson"));ValidateQuestion(q);
         Require(q.Mode=="QUIZ"&&q.Options.Select(o=>o.Id).SequenceEqual(r.Question.Options.Select(o=>o.Id))&&q.Text==r.Question.Text&&q.Options.Select(o=>o.Text).SequenceEqual(r.Question.Options.Select(o=>o.Text)),"Rescore zmienia punktację, nie treść/mapowanie.");
         Require(q.Options.Any(o=>o.Correct),"Brak poprawnej odpowiedzi."); ResolvePartial(q);r.Question=q;r.Applied=true;Replay();if(quizData.Current!=null&&quizData.Current.Id==r.Id)quizData.Current=Copy(r);
     }
-    private void CancelQuiz(bool announce) { if(quizData.Current!=null&&(quizData.Current.Status=="open"||quizData.Current.Status=="locked")) {quizData.Current.Status="cancelled";quizData.Current.EndedAt=Now();quizData.History.Add(Copy(quizData.Current));Compact();} quizData.Current=null;quizData.Podium=false;quizData.Revision++;SaveState(CurrentExpirationError()!="");BroadcastState();BroadcastData(); }
+    private void CancelQuiz(bool announce) { if(quizData.Current!=null&&(quizData.Current.Status=="open"||quizData.Current.Status=="locked")) {quizData.Current.Status="cancelled";quizData.Current.EndedAt=Now();UpdateRoundSummary(quizData.Current);quizData.History.Add(Copy(quizData.Current));Compact();} quizData.Current=null;quizData.Podium=false;quizData.Revision++;SaveState(CurrentExpirationError()!="");BroadcastState();BroadcastData(); }
     private void SetOverlayVisibility(bool show) {Require(quizData.Current!=null||quizData.Podium,"Brak rundy/podium.");quizData.OverlayVisible=show;if(quizData.Current!=null)quizData.Current.Visible=show;quizData.Revision++;SaveState();BroadcastState();}
     private void RegisterVote(int index) {
         var r=quizData.Current; if(r==null||r.Status!="open"||index<1||index>r.Question.Options.Count)return;
@@ -1236,9 +1378,10 @@ public class CPHInline
         if(GetBoolArg("isInternal"))return;string message=GetStringArg("message").Trim();if(message.Length>1000)return;
         int answer;if(TryParseVote(message,quizData.Settings.VoteParsing,quizData.Current==null?12:quizData.Current.Question.Options.Count,out answer)){RegisterVote(answer);return;}
         string id=GetStringArg("userId");if(id=="")id="name:"+GetStringArg("userName").ToLowerInvariant();
-        if(message.Equals(PointsCommand,StringComparison.OrdinalIgnoreCase)&&AllowCommand("points",id)){SendUserPoints();return;}
-        if(message.Equals(RankingCommand,StringComparison.OrdinalIgnoreCase)&&AllowCommand("ranking",id)){SendRanking();return;}
-        if(message.StartsWith(AdminCommand,StringComparison.OrdinalIgnoreCase)&&(message.Length==AdminCommand.Length||Char.IsWhiteSpace(message[AdminCommand.Length]))&&IsChatAdmin())HandleAdminChatCommand(message);
+        if(message.Equals(quizData.Settings.PointsCommand,StringComparison.OrdinalIgnoreCase)&&AllowCommand("points",id)){SendUserPoints();return;}
+        if(message.Equals(quizData.Settings.RankingCommand,StringComparison.OrdinalIgnoreCase)&&AllowCommand("ranking",id)){SendRanking();return;}
+        string adminCommand=quizData.Settings.AdminCommand;
+        if(message.StartsWith(adminCommand,StringComparison.OrdinalIgnoreCase)&&(message.Length==adminCommand.Length||Char.IsWhiteSpace(message[adminCommand.Length]))&&IsChatAdmin())HandleAdminChatCommand(message);
     }
     private static bool TryParseVote(string raw,string mode,int answerCount,out int answer) {
         answer=0;if(raw==null||raw.Length>1000||answerCount<1||answerCount>12)return false;
@@ -1259,9 +1402,9 @@ public class CPHInline
     private void SendUserPoints() {
         string id=GetStringArg("userId");if(id=="")id="name:"+GetStringArg("userName").ToLowerInvariant();var scores=quizData.Scores;ScoreEntry e;
         if(!scores.TryGetValue(id,out e)){string key;if(TryFindScoreKeyByName(scores,GetDisplayName(),out key))e=scores[key];}
-        SendChat(GetDisplayName()+": "+(e==null?"0 pkt":e.Points+" pkt - poprawne "+e.CorrectAnswers+"/"+e.AnsweredQuestions));
+        SendChat(GetDisplayName()+": "+(e==null?"0 pkt":e.Points+" pkt | poprawne "+e.CorrectAnswers+"/"+e.AnsweredQuestions));
     }
-    private void SendRanking() {var top=SortScores(quizData.Scores).Take(5).Select((x,i)=>(i+1)+". "+SafeName(x.UserName)+" - "+x.Points+" pkt");SendChat("Quiz TOP 5: "+String.Join(" - ",top));}
+    private void SendRanking() {var top=SortScores(quizData.Scores).Take(5).Select((x,i)=>(i+1)+". "+SafeName(x.UserName)+" - "+x.Points+" pkt");SendChat("Quiz TOP 5: "+String.Join(" | ",top));}
     private void SendChat(string text) {text=(text??"").Replace("\r"," ").Replace("\n"," ");if(text.Length>470)text=text.Substring(0,469)+"…";CPH.SendMessage(text,true,true);}
     private string SafeName(string text){text=(text??"").Replace("\r"," ").Replace("\n"," ").Trim();return text==""?"Widz":text.Substring(0,Math.Min(80,text.Length));}
     private long UnixMilliseconds(){return Now();}
@@ -1269,13 +1412,15 @@ public class CPHInline
         if(op=="sync"||op=="tick"){BroadcastState();return;}
         if(op=="getscores"){BroadcastScores();return;}
         if(op=="getdata"){BroadcastData();return;}
+        if(op=="getcompetitive"){BroadcastCompetitive();return;}
+
         if(op=="diagnostics"){Broadcast(new{type="quiz-diagnostics",requestId=requestId,appVersion=AppVersion,build=BuildLabel,enginePatch=EnginePatch,protocol=Protocol,stateSchema=2,backupSchema=1,rankingArchiveSchema=1,rankingArchiveManagement=true,archiveCleanup=true,openArchiveFolder=true,migration=quizData.Migration,aggregate="PARTIAL",autoFinalizeError=CurrentExpirationError(),rankingCount=quizData.Scores.Count,historyCount=quizData.History.Count,snapshotCount=LoadSnapshots().Count,revision=quizData.Revision});return;}
         if(op=="start"){if(GetStringArg("payloadJson")!="")Start(Read<Question>(GetStringArg("payloadJson")));else StartQuiz(GetStringArg("question"),GetStringArg("answersJson"),GetIntArg("durationSeconds",0),true);return;}
         if(op=="lock"||op=="lockexpired"){LockQuiz(op=="lockexpired",true);return;}
         if(op=="reopen"){ReopenQuiz(true);return;}
         if(op=="reveal") {
             Require(quizData.Current!=null,"Brak rundy.");
-            if(GetStringArg("payloadJson")!=""){Reveal(quizData.Current,Read<Question>(GetStringArg("payloadJson")));quizData.Revision++;SaveState();BroadcastState();BroadcastScores();}
+            if(GetStringArg("payloadJson")!=""){Reveal(quizData.Current,Read<Question>(GetStringArg("payloadJson")));quizData.Revision++;SaveState();BroadcastState();BroadcastScores();AnnounceRevealedRound(quizData.Current);}
             else RevealAnswer(GetIntArg("correctIndex",0),GetIntArg("pointsPerCorrect",1),GetIntArg("pointsPerAdjacent",0),GetStringArg("scoringMode"),GetStringArg("partialIndicesJson"),true);return;
         }
         if(op=="cancel"){CancelQuiz(true);return;}
@@ -1288,6 +1433,12 @@ public class CPHInline
             else {var b=Read<BankEnvelope>(GetStringArg("payloadJson"));ValidateBank(b);Broadcast(new{type="quiz-preview",kind="bank",questions=b.Questions.Count,sets=b.Sets.Count});}return;
         }
         switch(op) {
+        case "competitive": {
+            EnsureRoundFinished();var settings=Read<CompetitiveSettings>(GetStringArg("payloadJson"));ValidateCompetitiveSettings(settings);
+            settings.SeasonsEnabled=quizData.Competitive.Settings.SeasonsEnabled;quizData.Competitive.Settings=settings;break;
+        }
+
+        case "preparenext":PrepareNext();break;
         case "pause": case "resume": case "time": TimerOperation(op);Expire();break;
         case "moderatevote":ModerateVote();break;
         case "undo":Undo();break;
@@ -1300,7 +1451,12 @@ public class CPHInline
         }
         case "restoreimportbackup":EnsureRoundFinished();Confirm("COFNIJ");Require(quizData.HasImportBackup,"Brak kopii importu.");Snapshot("undo CSV import");NewEpoch(Copy(quizData.ImportBackup));quizData.ImportBackup.Clear();quizData.HasImportBackup=false;break;
         case "settings": {
-            var nextSettings=Read<Settings>(GetStringArg("payloadJson"));ValidateSettings(nextSettings);
+            string settingsJson=GetStringArg("payloadJson");var nextSettings=Read<Settings>(settingsJson);var providedSettings=JObject.Parse(settingsJson);
+            if(!providedSettings.Properties().Any(property=>String.Equals(property.Name,"PointsCommand",StringComparison.OrdinalIgnoreCase)))nextSettings.PointsCommand=quizData.Settings.PointsCommand;
+            if(!providedSettings.Properties().Any(property=>String.Equals(property.Name,"RankingCommand",StringComparison.OrdinalIgnoreCase)))nextSettings.RankingCommand=quizData.Settings.RankingCommand;
+            if(!providedSettings.Properties().Any(property=>String.Equals(property.Name,"AdminCommand",StringComparison.OrdinalIgnoreCase)))nextSettings.AdminCommand=quizData.Settings.AdminCommand;
+            if(!providedSettings.Properties().Any(property=>String.Equals(property.Name,"AnnounceRoundEventsInChat",StringComparison.OrdinalIgnoreCase)))nextSettings.AnnounceRoundEventsInChat=quizData.Settings.AnnounceRoundEventsInChat;
+            ValidateSettings(nextSettings);
             var oldPolicy=quizData.Settings.ArchiveRetention;var newPolicy=nextSettings.ArchiveRetention;
             if(newPolicy.Enabled&&(!oldPolicy.Enabled||newPolicy.MaxCount<oldPolicy.MaxCount||newPolicy.MaxAgeDays<oldPolicy.MaxAgeDays||newPolicy.IncludeManual&&!oldPolicy.IncludeManual||newPolicy.IncludeSafety&&!oldPolicy.IncludeSafety))Confirm("USUN ARCHIWA");
             if(nextSettings.TeamMode!=quizData.Settings.TeamMode)EnsureRoundFinished();quizData.Settings=nextSettings;break;
@@ -1322,24 +1478,29 @@ public class CPHInline
         case "deleteset":quizData.Sets.RemoveAll(x=>x.Id==GetStringArg("itemId"));break;
         case "loadset": {
             EnsureRoundFinished();var set=quizData.Sets.FirstOrDefault(x=>x.Id==GetStringArg("itemId"));Require(set!=null&&set.Questions.Count>0,"Pusty/nieznany zestaw.");
-            quizData.Queue=Copy(set.Questions);quizData.QueueSetId=set.Id;quizData.QueueIndex=-1;
+            quizData.Queue=Copy(set.Questions);quizData.QueueSetId=set.Id;quizData.QueueIndex=-1;quizData.PreparedQueueIndex=-1;
             if(GetBoolArg("shuffle")){var random=new Random();quizData.Queue=quizData.Queue.OrderBy(x=>random.Next()).ToList();}quizData.Podium=false;break;
         }
         case "next":case "previous": {
             EnsureRoundFinished();Require(quizData.Queue!=null&&quizData.Queue.Count>0,"Najpierw wczytaj zestaw.");
-            int n=quizData.QueueIndex+(op=="next"?1:-1);Require(n>=0,"Początek kolejki.");
+            int n=op=="next"&&quizData.PreparedQueueIndex==quizData.QueueIndex&&quizData.PreparedQueueIndex>=0?quizData.QueueIndex:quizData.QueueIndex+(op=="next"?1:-1);Require(n>=0,"Początek kolejki.");
             if(n>=quizData.Queue.Count){quizData.Podium=quizData.Settings.Overlay.Podium;quizData.OverlayVisible=true;quizData.QueueIndex=quizData.Queue.Count;break;}
             quizData.QueueIndex=n;Start(quizData.Queue[n]);return;
         }
         case "podium":EnsureRoundFinished();Require(quizData.Settings.Overlay.Podium,"Podium jest wyłączone w ustawieniach.");quizData.Podium=!quizData.Podium;if(quizData.Podium)quizData.OverlayVisible=true;break;
         case "teams":EnsureRoundFinished();var teams=Read<TeamEnvelope>(GetStringArg("payloadJson"));Require(teams!=null,"Puste drużyny.");quizData.Teams=teams.Teams;quizData.Members=teams.Members;break;
         case "restorebackup": {
-            EnsureRoundFinished();Confirm("RESTORE");var b=Read<Backup>(GetStringArg("payloadJson"));ValidateBackup(b);Snapshot("full backup restore");
+            EnsureRoundFinished();Confirm("RESTORE");var b=Read<Backup>(GetStringArg("payloadJson"));ValidateBackup(b);CheckCompetitiveRestore(b.Data);
+            string sourceRaw=storedStateJson;Snapshot("full backup restore",sourceRaw);
+            Require(LoadSnapshots().Any(x=>x.Reason=="full backup restore"&&String.Equals(x.Data,sourceRaw,StringComparison.Ordinal)),"Nie potwierdzono zapisu snapshotu. Dane pozostają bez zmian.");
             int rev=quizData.Revision;quizData=Copy(b.Data);ConsolidateLegacyTemplates(quizData);quizData.Revision=Math.Max(rev,quizData.Revision);SanitizeRestoredRound();break;
         }
         case "restoresnapshot": {
             EnsureRoundFinished();Confirm("RESTORE");var s=LoadSnapshots().FirstOrDefault(x=>x.Id==GetStringArg("itemId"));Require(s!=null,"Snapshot nie istnieje.");
-            var restored=Read<Root>(s.Data);ValidateBackup(new Backup{Data=restored,CreatedAt=s.At});Snapshot("before snapshot restore");int rev=quizData.Revision;quizData=restored;ConsolidateLegacyTemplates(quizData);quizData.Revision=Math.Max(rev,quizData.Revision);SanitizeRestoredRound();break;
+            var restored=Read<Root>(s.Data);ValidateBackup(new Backup{Data=restored,CreatedAt=s.At});CheckCompetitiveRestore(restored);
+            string sourceRaw=storedStateJson;Snapshot("before snapshot restore",sourceRaw);
+            Require(LoadSnapshots().Any(x=>x.Reason=="before snapshot restore"&&String.Equals(x.Data,sourceRaw,StringComparison.Ordinal)),"Nie potwierdzono zapisu snapshotu. Dane pozostają bez zmian.");
+            int rev=quizData.Revision;quizData=restored;ConsolidateLegacyTemplates(quizData);quizData.Revision=Math.Max(rev,quizData.Revision);SanitizeRestoredRound();break;
         }
         case "importbank": {
             EnsureRoundFinished();Confirm("IMPORT");var b=Read<BankEnvelope>(GetStringArg("payloadJson"));ValidateBank(b);
@@ -1357,12 +1518,13 @@ public class CPHInline
         default:throw new InvalidOperationException("Nieznana operacja: "+op);
         }
         quizData.Revision++;SaveState();BroadcastState();BroadcastScores();BroadcastData();
+        if((op=="pause"||op=="resume"||op=="time")&&quizData.Current!=null&&quizData.Current.Status=="revealed")AnnounceRevealedRound(quizData.Current);
         if(op=="resetscores") { CPH.LogInfo("[LukiQuiz V2] RESET rankingu zapisany, revision="+quizData.Revision+", scores="+quizData.Scores.Count);  }
         else if(op=="setscore") { CPH.LogInfo("[LukiQuiz V2] Korekta punktów zapisana, revision="+quizData.Revision);  }
         else if(op=="savequestion"||op=="savetemplate")BroadcastNotice("Szablon zapisany.");
         else if(op=="importbank")BroadcastNotice("Szablony zostały zaimportowane.");
     }
-    private void ValidateBackup(Backup b) {Require(b!=null&&b.Format=="LukiQuizBackup"&&b.Schema==1&&b.Data!=null,"Nieobsługiwany backup.");ValidateText(b.AppVersion,1,30,"AppVersion");ValidateRange(b.CreatedAt,0,4102444800000L,"Backup timestamp");Validate(b.Data);var copy=Copy(b.Data);var previous=quizData;try{quizData=copy;Replay();Require(JsonConvert.SerializeObject(copy.Scores)==JsonConvert.SerializeObject(b.Data.Scores)&&JsonConvert.SerializeObject(copy.TeamScores)==JsonConvert.SerializeObject(b.Data.TeamScores),"Ranking backupu nie zgadza się z historią.");}finally{quizData=previous;}}
+    private void ValidateBackup(Backup b) {Require(b!=null&&b.Format=="LukiQuizBackup"&&b.Schema==1&&b.Data!=null,"Nieobsługiwany backup.");ValidateText(b.AppVersion,1,30,"AppVersion");ValidateRange(b.CreatedAt,0,4102444800000L,"Backup timestamp");Validate(b.Data);var copy=Copy(b.Data);var previous=quizData;try{quizData=copy;Replay();Require(JsonConvert.SerializeObject(copy.Scores)==JsonConvert.SerializeObject(b.Data.Scores)&&JsonConvert.SerializeObject(copy.TeamScores)==JsonConvert.SerializeObject(b.Data.TeamScores)&&JsonConvert.SerializeObject(copy.Competitive.Stats)==JsonConvert.SerializeObject(b.Data.Competitive.Stats),"Ranking backupu nie zgadza się z historią.");}finally{quizData=previous;}}
     private void ValidateBank(BankEnvelope b) {Require(b!=null&&b.Format=="LukiQuizBank"&&b.Schema==1&&b.Questions!=null&&b.Sets!=null,"Nieobsługiwany plik Szablonów.");ValidateText(b.AppVersion,1,30,"AppVersion");ValidateRange(b.CreatedAt,0,4102444800000L,"Bank timestamp");var d=new Root();d.Bank=b.Questions;d.Sets=b.Sets;Validate(d);}
     private void SanitizeRestoredRound() {if(quizData.Current!=null&&(quizData.Current.Status=="open"||quizData.Current.Status=="locked")){quizData.Current.Status="cancelled";quizData.Current.ClosesAt=0;quizData.Current.Paused=false;quizData.Current.Visible=false;}quizData.Podium=false;}
     private void Broadcast(object obj) {
@@ -1392,9 +1554,27 @@ public class CPHInline
             teamMode=quizData.Settings.TeamMode,teams=quizData.Teams.Select(t=>new{id=t.Id,name=t.Name,points=quizData.TeamScores.ContainsKey(t.Id)?quizData.TeamScores[t.Id]:0}).OrderByDescending(t=>t.points).ToList()
         };
     }
+    private void RemoveRetiredRoundFields(JObject round) {
+        if(round==null)return;var competitive=round["Competitive"] as JObject;if(competitive==null)return;
+        competitive.Remove("SeasonId");var settings=competitive["Settings"] as JObject;if(settings!=null)settings.Remove("SeasonsEnabled");
+    }
+    private JObject PanelPayload(object value) {
+        if(value==null)return null;var payload=JObject.FromObject(value,JsonSerializer.Create(serializerOptions));
+        if(value is Root) {
+            var competitive=payload["Competitive"] as JObject;
+            if(competitive!=null) {
+                competitive.Remove("Seasons");competitive.Remove("ActiveSeasonId");competitive.Remove("FrozenRounds");
+                var settings=competitive["Settings"] as JObject;if(settings!=null)settings.Remove("SeasonsEnabled");
+                foreach(string key in new[]{"Base","Stats"}){var projection=competitive[key] as JObject;if(projection!=null)projection.Remove("SeasonScores");}
+            }
+            var history=payload["History"] as JArray;if(history!=null)foreach(var round in history.OfType<JObject>())RemoveRetiredRoundFields(round);
+            RemoveRetiredRoundFields(payload["Current"] as JObject);
+        } else if(value is Round)RemoveRetiredRoundFields(payload);
+        return payload;
+    }
     private void BroadcastState() {
         lastBroadcastAt=Now();stateBroadcastPending=false;var p=PublicState();CPH.SetGlobalVar(PublicVariable,JsonConvert.SerializeObject(p),false);Broadcast(p);
-        Broadcast(new{type="quiz-admin",appVersion=AppVersion,revision=quizData.Revision,current=quizData.Current,epoch=quizData.Epoch,queueIndex=quizData.QueueIndex,queueCount=quizData.Queue==null?0:quizData.Queue.Count});
+        Broadcast(new{type="quiz-admin",appVersion=AppVersion,revision=quizData.Revision,current=PanelPayload(quizData.Current),epoch=quizData.Epoch,queueIndex=quizData.QueueIndex,queueCount=quizData.Queue==null?0:quizData.Queue.Count});
     }
     private object ScorePayload() { return SortScores(quizData.Scores).Select((e,i)=>new{position=i+1,userId=e.UserId,userName=SafeName(e.UserName),points=e.Points,correct=e.CorrectAnswers,answered=e.AnsweredQuestions,lastUpdatedAt=e.LastUpdatedAt}).ToList(); }
     private void BroadcastScores() {Broadcast(new{type="quiz-scores",appVersion=AppVersion,revision=quizData.Revision,scores=ScorePayload()});}
@@ -1402,7 +1582,7 @@ public class CPHInline
         object snapshotInfo;
         try { snapshotInfo=LoadSnapshots().Select(s=>new{id=s.Id,at=s.At,reason=s.Reason,bytes=Encoding.UTF8.GetByteCount(s.Data)}).ToList(); }
         catch(Exception ex) { CPH.LogWarn("[LukiQuiz V2] Lista snapshotów niedostępna dla panelu: "+ex.GetType().Name); snapshotInfo=new object[0]; }
-        Broadcast(new{type="quiz-data",appVersion=AppVersion,revision=quizData.Revision,data=quizData,snapshots=snapshotInfo});
+        Broadcast(new{type="quiz-data",appVersion=AppVersion,revision=quizData.Revision,data=PanelPayload(quizData),snapshots=snapshotInfo,competitiveDefinitions=AchievementDefinitions()});
     }
     private bool IsChatAdmin()
     {
@@ -1436,19 +1616,20 @@ public class CPHInline
 
     private void HandleAdminChatCommand(string message)
     {
-        string rest = message.Length > AdminCommand.Length
-            ? message.Substring(AdminCommand.Length).Trim()
+        string adminCommand=quizData.Settings.AdminCommand;
+        string rest = message.Length > adminCommand.Length
+            ? message.Substring(adminCommand.Length).Trim()
             : "";
         if (String.IsNullOrWhiteSpace(rest) ||
             String.Equals(rest, "pomoc", StringComparison.OrdinalIgnoreCase) ||
             String.Equals(rest, "help", StringComparison.OrdinalIgnoreCase))
         {
             SendChat(
-                "Quiz admin: " + AdminCommand +
-                " start Pytanie | Odp. 1 | Odp. 2 ... - " + AdminCommand +
-                " zamknij - " + AdminCommand +
+                "Quiz admin: " + adminCommand +
+                " start Pytanie | Odp. 1 | Odp. 2 ... - " + adminCommand +
+                " zamknij - " + adminCommand +
                 " wynik NUMER [PEŁNE PUNKTY] [PUNKTY ZA ODPOWIEDŹ OBOK] - " +
-                AdminCommand + " anuluj - " + AdminCommand + " pokaz/ukryj");
+                adminCommand + " anuluj - " + adminCommand + " pokaz/ukryj");
             return;
         }
 
@@ -1464,7 +1645,7 @@ public class CPHInline
             if (parts.Length < 3)
             {
                 SendChat(
-                    "Quiz: użycie: " + AdminCommand +
+                    "Quiz: użycie: " + adminCommand +
                     " start Pytanie | Odpowiedź 1 | Odpowiedź 2 | ...");
                 return;
             }
@@ -1536,7 +1717,7 @@ public class CPHInline
             return;
         }
 
-        SendChat("Quiz: nieznana komenda. Wpisz " + AdminCommand + " pomoc");
+        SendChat("Quiz: nieznana komenda. Wpisz " + adminCommand + " pomoc");
     }
 
     private void ImportScoresFromPanel(
@@ -1825,6 +2006,66 @@ public class CPHInline
         return false;
     }
 
+    public class CompetitiveSettings {
+        public bool StreakEnabled {get;set;}
+        public bool AchievementsEnabled {get;set;}
+        public bool SeasonsEnabled {get;set;}
+        [JsonProperty(ObjectCreationHandling=ObjectCreationHandling.Replace)] public List<StreakBonus> StreakBonuses {get;set;}=new List<StreakBonus>{new StreakBonus{Threshold=3},new StreakBonus{Threshold=5},new StreakBonus{Threshold=10}};
+    }
+    public class StreakBonus {public int Threshold {get;set;}public int Points {get;set;}}
+    public class CompetitiveState {
+        public int Schema {get;set;}=1;
+        public string DataId {get;set;}=Guid.NewGuid().ToString("N");
+        public CompetitiveSettings Settings {get;set;}=new CompetitiveSettings();
+        public CompetitiveProjection Base {get;set;}=new CompetitiveProjection();
+        public CompetitiveProjection Stats {get;set;}=new CompetitiveProjection();
+        public List<Season> Seasons {get;set;}=new List<Season>();
+        public string ActiveSeasonId {get;set;}="";
+        public List<string> FrozenRounds {get;set;}=new List<string>();
+    }
+    public class CompetitiveProjection {
+        public Dictionary<string,CompetitiveUser> Users {get;set;}=new Dictionary<string,CompetitiveUser>();
+        public Dictionary<string,Dictionary<string,ScoreEntry>> SeasonScores {get;set;}=new Dictionary<string,Dictionary<string,ScoreEntry>>();
+    }
+    public class CompetitiveUser {
+        public string UserId {get;set;}
+        public string UserName {get;set;}
+        public int CurrentStreak {get;set;}
+        public int BestStreak {get;set;}
+        public int StreakCorrectAnswers {get;set;}
+        public int AchievementCorrectAnswers {get;set;}
+        public int AchievementRounds {get;set;}
+        public int AchievementStreak {get;set;}
+        public Dictionary<string,long> Achievements {get;set;}=new Dictionary<string,long>();
+    }
+    public class AchievementDefinition {public string Id {get;set;}public string Metric {get;set;}public int Threshold {get;set;}public bool RequiresStreak {get;set;}}
+    public class CompetitiveRound {public CompetitiveSettings Settings {get;set;}=new CompetitiveSettings();public string SeasonId {get;set;}="";}
+    public class Season {
+        public string Id {get;set;}=Guid.NewGuid().ToString("N");
+        public string Name {get;set;}="";
+        public string Kind {get;set;}="season";
+        public string Status {get;set;}="created";
+        public string CreateRequestId {get;set;}="";
+        public long CreatedAt {get;set;}
+        public long StartedAt {get;set;}
+        public long EndedAt {get;set;}
+        public Dictionary<string,ScoreEntry> Scores {get;set;}=new Dictionary<string,ScoreEntry>();
+        public List<SeasonWinner> Winners {get;set;}=new List<SeasonWinner>();
+    }
+    public class SeasonWinner {public string UserId {get;set;}public string UserName {get;set;}public int Points {get;set;}}
+
+    public class RoundSummary {
+        public int Participants {get;set;}
+        public int AcceptedVotes {get;set;}
+        public int? SubmittedVotes {get;set;}
+        public int? CorrectAnswers {get;set;}
+        public double? CorrectPercent {get;set;}
+        public long? TotalPoints {get;set;}
+        public int? TopPoints {get;set;}
+        public int? BiggestClimb {get;set;}
+        public string Status {get;set;}="";
+    }
+
     public class Root {
         public int Schema {get;set;}=2;
         public int Revision {get;set;}
@@ -1849,6 +2090,8 @@ public class CPHInline
         public List<Question> Queue {get;set;}=new List<Question>();
         public string QueueSetId {get;set;}="";
         public int QueueIndex {get;set;}=-1;
+        public int PreparedQueueIndex {get;set;}=-1;
+        public CompetitiveState Competitive {get;set;}=new CompetitiveState();
         public bool Podium {get;set;}
         public bool OverlayVisible {get;set;}=true;
     }
@@ -1882,6 +2125,8 @@ public class CPHInline
         public int? Points {get;set;}
     }
     public class Round {
+        public CompetitiveRound Competitive {get;set;}
+        public RoundSummary Summary {get;set;}
         public string Id {get;set;}=Guid.NewGuid().ToString("N");
         public Question Question {get;set;}=new Question();
         public string Status {get;set;}="open";
@@ -1928,9 +2173,13 @@ public class CPHInline
     public class TeamEnvelope {public List<Team> Teams {get;set;} public Dictionary<string,string> Members {get;set;}}
     public class BrowserEnvelope {public List<Question> Templates {get;set;} public Question Draft {get;set;}}
     public class SnapshotEntry {public string Id {get;set;}public long At {get;set;}public string Reason {get;set;}public string Data {get;set;}}
-    public class Backup {public string Format {get;set;}="LukiQuizBackup";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.1.0";public long CreatedAt {get;set;}public Root Data {get;set;}}
-    public class BankEnvelope {public string Format {get;set;}="LukiQuizBank";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.1.0";public long CreatedAt {get;set;}public List<Question> Questions {get;set;}public List<QuizSet> Sets {get;set;}}
+    public class Backup {public string Format {get;set;}="LukiQuizBackup";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.2.0";public long CreatedAt {get;set;}public Root Data {get;set;}}
+    public class BankEnvelope {public string Format {get;set;}="LukiQuizBank";public int Schema {get;set;}=1;public string AppVersion {get;set;}="2.2.0";public long CreatedAt {get;set;}public List<Question> Questions {get;set;}public List<QuizSet> Sets {get;set;}}
     public class Settings {
+        public bool AnnounceRoundEventsInChat {get;set;}=false; // use panel.html to change this in options, default is off
+        public string PointsCommand {get;set;}=CPHInline.PointsCommand;
+        public string RankingCommand {get;set;}=CPHInline.RankingCommand;
+        public string AdminCommand {get;set;}=CPHInline.AdminCommand;
         public string PanelLanguage {get;set;}="pl";
         public string OverlayLanguage {get;set;}="pl";
         public bool SyncLanguage {get;set;}=true;
