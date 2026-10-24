@@ -1,5 +1,72 @@
 # Historia zmian - LukiQuizEngine
 
+## 2.2.0 - Quality of Life & Competitive Update (STABLE)
+
+Wersja 2.2.0 rozszerza LukiQuizEngine o nowe narzędzia do prowadzenia quizów, opcjonalny system rywalizacji, dodatkową personalizację komend Twitch oraz usprawnienia interfejsu.
+
+### Nowości - Quality of Life
+
+- **Pasek LIVE** - kompaktowe sterowanie aktywną rundą, podgląd czasu, głosów i stanu głosowania.
+- **Podsumowanie rundy** - statystyki uczestników, poprawnych odpowiedzi, skuteczności i przyznanych punktów na podstawie zapisanej historii.
+- **Ochrona podczas transmisji** - opcjonalne potwierdzenia ryzykownych operacji w panelu ADVANCED, ograniczające przypadkowe kliknięcia.
+- **Presety ustawień pytania** - zapisywanie i wczytywanie konfiguracji timera, głosowania, punktacji oraz trybu rundy. Dodano gotowe przykłady presetów i możliwość tworzenia własnych.
+- **Przygotowanie następnego pytania** - wczytywanie kolejnego pytania z zestawu bez automatycznego rozpoczynania głosowania.
+- **Wyszukiwanie w Ustawieniach i Pomocy** - dwie niezależne wyszukiwarki obsługujące język polski i angielski, wiele słów oraz wyszukiwanie bez rozróżniania wielkości liter i polskich znaków.
+- **Przejrzystsze ustawienia** - cztery rozwijane kategorie ustawień, poprawiony układ skrótów klawiaturowych i rozbudowana Pomoc PL/EN.
+
+### Nowości - Streak
+
+- Dodano opcjonalny system serii poprawnych odpowiedzi, domyślnie wyłączony.
+- System zapisuje aktualną serię, najlepszą serię i liczbę poprawnych odpowiedzi.
+- Dodano konfigurowalne progi bonusowych punktów za serie.
+- Domyślne bonusy punktowe wynoszą 0.
+- Bonusy respektują istniejące limity punktów.
+- System współpracuje z rozliczaniem rund, historią oraz cofaniem i przeliczaniem wyników.
+
+### Nowości - Osiągnięcia
+
+**Zbudowałem na razie samą podstawę, która działa, ale w przyszłości zostanie bardziej rozbudowana o dodatkowe funkcje.**
+
+Dodano opcjonalny system osiągnięć, domyślnie wyłączony.
+
+Dostępnych jest 9 wbudowanych osiągnięć za:
+
+- Pierwszą poprawną odpowiedź.
+- 10, 25 i 50 poprawnych odpowiedzi.
+- Serie 3, 5 i 10 poprawnych odpowiedzi.
+- Udział w 10 i 50 rundach.
+
+Osiągnięcia zapisują daty zdobycia i nie przyznają dodatkowych punktów. Osiągnięcia związane z seriami wymagają również aktywnego systemu Streak.
+
+Wyłączenie systemu nie usuwa zachowanego postępu.
+
+### Nowości - Komendy Twitch
+
+- Dodano możliwość zmiany nazw komend `!punkty`, `!ranking` i prefiksu administracyjnego `!quiz` bez edycji kodu.
+- Zachowano dotychczasowe domyślne nazwy i mechanizmy cooldownów.
+- Dodano sprawdzanie poprawności i kolizji nazw komend.
+- Dodano opcjonalne komunikaty o rundzie na czacie Twitch, konfigurowane w ADVANCED i domyślnie wyłączone.
+- Komunikaty obejmują rozpoczęcie, ręczne zamknięcie i ponowne otwarcie głosowania oraz ujawnienie wyniku.
+- Komunikat wyniku jest wysyłany po zatwierdzonym zapisie stanu.
+- Ulepszono format odpowiedzi `!punkty` i `!ranking`. Poszczególne elementy oraz pozycje rankingu są oddzielane znakiem `|`, zamiast dotychczasowych myślników pełniących funkcję separatorów.
+
+### Interfejs i zgodność
+
+- Zachowano tryby PROSTY, ADVANCED i LEGACY.
+- Nowe narzędzia operacyjne i ustawienia rywalizacji udostępniono w ADVANCED.
+- Ujednolicono nazwę LukiQuizEngine w nagłówkach wszystkich trybów panelu.
+- Zachowano istniejącą nawigację oraz wspólny silnik quizu.
+- Rozbudowano tłumaczenia PL/EN i dokumentację Pomocy.
+- Zachowano zgodny odczyt starszych danych i ustawień z 2.1.0 BETA.
+- Zachowano `localQuiz_data_v2`, dotychczasowe schematy głównego stanu i backupów, identyfikatory `PHoeniX` i `QUPA`, jedną Action C# i jeden trigger czatu Twitch.
+- Nowe dane Streak i Osiągnięć są uwzględniane w pełnych backupach. Przywracanie sprzecznych stanów rywalizacji podlega dodatkowej kontroli bezpieczeństwa.
+
+### Bezpieczeństwo i testy
+
+- Zachowano ograniczenia zapisu, walidację danych i dotychczasowe mechanizmy ochrony historii.
+- Znane ograniczenie HTTP `/DoAction` pozostaje aktualne. Zalecana jest konfiguracja wyłącznie lokalna na `127.0.0.1`, bez udostępniania serwerów do sieci.
+
+
 ## 2.1.0 BETA - Legacy, PL/ENG, ulepszenia interfejsu i nowe narzędzia
 
 Wersja 2.1.0 BETA rozszerza LukiQuizEngine o trzeci tryb panelu, dwujęzyczny interfejs, bardziej czytelne sterowanie quizem, rozbudowaną historię rund, zarządzanie usuwaniem archiwów oraz lokalny symulator.
