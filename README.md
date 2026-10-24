@@ -5,18 +5,18 @@
 
 # LukiQuizEngine for Streamer.bot
 
-**Aktualne wydanie: v2.1.0 BETA**
+**Aktualne wydanie: v2.2.0**
 
 **🌐 Język / Language:** [🇵🇱 Polski](README.md) | [🇬🇧 English](README_EN.md)
 
-- [READMElegacy.md](1.3.0/READMElegacy.md) - archiwalna dokumentacja starszej wersji **LukiQuizEngine v1.3.0**, dostępna w folderze [1.3.0](1.3.0/). Zawiera oryginalną instrukcję instalacji, konfiguracji i obsługi. Informacje oraz przykłady kodu dotyczą wersji 1.3.0 i nie powinny być stosowane bezpośrednio w aktualnej wersji 2.1.0 BETA.
+- [READMElegacy.md](1.3.0/READMElegacy.md) - archiwalna dokumentacja starszej wersji **LukiQuizEngine v1.3.0**, dostępna w folderze [1.3.0](1.3.0/). Zawiera oryginalną instrukcję instalacji, konfiguracji i obsługi. Informacje oraz przykłady kodu dotyczą wersji 1.3.0 i nie powinny być stosowane bezpośrednio w aktualnej wersji 2.2.0.
 
 LukiQuizEngine to lokalny silnik quizowy dla Streamer.bot z panelem WWW, overlayem OBS, głosowaniem na czacie Twitch, historią rund i trwałym rankingiem.
 
 Do działania wystarczy **jedna Action C# i jeden trigger wiadomości Twitch**. Nie potrzebujesz Node.js, Pythona, osobnej aplikacji `.exe`, zewnętrznej bazy danych ani hostingu.
 
 > [!IMPORTANT]
-> Wersja **2.1.0 BETA** jest przeznaczona do testowania w lokalnym środowisku. Przed użyciem podczas transmisji wykonaj kopię istniejących danych i przetestuj instalację. Znane ograniczenie bezpieczeństwa HTTP `/DoAction` zostało opisane w sekcji [Bezpieczeństwo i znane ograniczenia](#bezpieczeństwo-i-znane-ograniczenia).
+> Wersja **2.2.0** jest przeznaczona do testowania w lokalnym środowisku. Przed użyciem podczas transmisji wykonaj kopię istniejących danych i przetestuj instalację. Znane ograniczenie bezpieczeństwa HTTP `/DoAction` zostało opisane w sekcji [Bezpieczeństwo i znane ograniczenia](#bezpieczeństwo-i-znane-ograniczenia).
 
 ## Spis treści
 
