@@ -5,7 +5,7 @@
 
 # LukiQuizEngine for Streamer.bot
 
-**Current release: v2.2.0**
+**Current release: v2.2.0 STABLE**
 
 **Language:** [Polski](README.md) | English
 
@@ -16,11 +16,12 @@ LukiQuizEngine is a local quiz engine for Streamer.bot featuring a web control p
 It requires only **one C# Action and one Twitch chat message trigger**. No Node.js, Python, separate `.exe` application, external database, or hosting service is required.
 
 > [!IMPORTANT]
-> Version **2.2.0** is intended for testing in a local environment. Before using it during a live stream, back up your existing data and test your installation. The known HTTP `/DoAction` security limitation is explained in [Security and known limitations](#security-and-known-limitations).
+> Version **2.2.0 STABLE** adds new operator tools, optional competitive systems, and additional Twitch command settings. Streak and Achievements are disabled by default. Before updating, back up your existing data and verify your installation. A stable release does not guarantee that every bug or limitation has been eliminated. Isolated tests do not replace testing with the real Streamer.bot environment and Twitch chat. The known HTTP `/DoAction` security limitation is explained in [Security and known limitations](#security-and-known-limitations).
 
 ## Table of contents
 
 - [Features](#features)
+- [Quality of Life and competitive features in 2.2.0](#quality-of-life-and-competitive-features-in-220)
 - [Files and requirements](#files-and-requirements)
 - [Fresh installation](#fresh-installation)
 - [First test](#first-test)
@@ -57,6 +58,10 @@ It requires only **one C# Action and one Twitch chat message trigger**. No Node.
 - Overlay appearance customization, optional visual effects, sounds, and podium display.
 - Keyboard shortcuts and installation diagnostics.
 - A built-in local quiz simulator for testing quiz behavior without affecting actual rankings.
+- A **LIVE toolbar** for controlling the active round in ADVANCED mode.
+- **Round summary** with participant statistics, correct answers, and awarded points.
+- **Prepare next question** without automatically starting voting.
+- Optional round event announcements in Twitch chat.
 
 ### Panel and interface
 
@@ -66,6 +71,10 @@ It requires only **one C# Action and one Twitch chat message trigger**. No Node.
 - Polish and English language support for the panel and overlay.
 - Optional language synchronization between the panel and overlay.
 - A shared quiz engine and shared data across all panel modes.
+- **Settings and Help search** with support for multiple words and case-insensitive searching that ignores Polish diacritics.
+- Four collapsible settings categories and an improved keyboard shortcut layout.
+- **Stream Protection** - optional confirmation prompts for risky operations in ADVANCED.
+- **Question settings presets** for saving and loading selected quiz configurations.
 
 ### Leaderboards and archiving
 
@@ -78,6 +87,68 @@ It requires only **one C# Action and one Twitch chat message trigger**. No Node.
 - Manual deletion of selected archives with confirmation.
 - Optional automatic archive cleanup based on retention settings.
 - An **Open Archive Folder** button that opens the local archive directory in Windows File Explorer.
+
+### Streak and achievements
+
+- An optional correct-answer streak system, disabled by default.
+- Tracking of the current streak, best streak, and total correct answers.
+- Configurable point bonuses for reaching specific streak thresholds.
+- An optional system of 9 built-in achievements, disabled by default.
+- Viewing unlocked achievements, their requirements, and recorded dates in the ADVANCED panel.
+- Preserving existing progress when either system is disabled.
+
+## Quality of Life and competitive features in 2.2.0
+
+New operator tools are available in **ADVANCED**, within the existing LIVE, question editing, leaderboard, and settings sections. No new categories were added to the left navigation. SIMPLE and LEGACY retain their regular leaderboard interfaces. Switching panel modes does not interrupt the tracking of features already enabled in the engine.
+
+### Operator tools
+
+- **LIVE toolbar** displays the current question, round status, remaining time from the engine clock, final accepted votes, and voting lock state. Pause, resume, +10 s, -10 s, close, and reveal use the shared engine. Unavailable operations are disabled, and repeated actions are blocked while waiting for confirmation. Refresh the state if an operation has an uncertain result.
+- **Stream Protection** adds confirmation prompts for risky operations while preserving existing required confirmations. It is optional, stored in the current browser, and only applies to ADVANCED. It protects the operator against accidental actions but does not provide HTTP authentication.
+- **Round summary** reads round history to display participants, final accepted votes, correct answers, accuracy percentage, total awarded points, and the highest individual reward. Partial points and bonuses are included. Data for all rejected vote attempts and complete pre-round leaderboard positions is unavailable; these metrics are displayed as unavailable. POLL rounds do not have correct-answer accuracy or points. Cancelled and undone rounds do not show awarded points. Recalculation updates the summary. Viewing the summary does not award points.
+- **Question settings presets** allow you to save a name and selected settings groups: timer, voting, scoring, and round mode. Example presets include Quick Quiz, Standard Quiz, Tournament, and Poll. You can create, update, and delete custom presets and preview differences before applying them. Applying a preset changes only the draft and does not start a round. Preset format 1 is stored in the current browser's `localStorage`, with a maximum of 30 presets. Presets do not include passwords, viewer data, leaderboards, or archives. Keep the same host and port when updating.
+- **Prepare next question** uses the existing question-set queue, including any previously randomized order. It prepares a draft without starting voting, warns before replacing a modified draft, and detects when the question set has ended. Repeated clicks do not skip an already prepared question. Starting the round remains a separate operator action.
+- **Settings and Help search** provides two independent search tools. Settings can be searched in ADVANCED, while Help search is available in SIMPLE and ADVANCED. Search supports multiple words and ignores letter case and Polish diacritics. Matching sections expand automatically. Searching does not modify saved settings or execute engine operations.
+- **Improved settings layout** introduces four collapsible settings categories and a more readable keyboard shortcut layout that adapts to screen width. Collapsing a category does not change quiz settings.
+
+### Enabling the new systems
+
+In ADVANCED Settings, open **Competitive - optional**. Streak and Achievements have **two independent switches, both OFF by default**.
+
+Save changes after finishing or cancelling the active round. A new round records the enabled systems and bonus configuration at the moment it starts. Previous rounds do not receive retroactive competitive statistics.
+
+Disabling a system pauses its tracking without deleting saved progress. Neither switch automatically enables the other.
+
+### Streak and achievements
+
+Streak increases by one for a final answer marked as correct in a successfully settled QUIZ round. Changed votes are evaluated according to FIRST, LAST, or LIMITED. Multiple correct options qualify equally. Partial points awarded for an answer that is not marked correct do not qualify.
+
+An incorrect answer or failure to vote in an eligible round resets the current streak of a previously tracked viewer. POLL, cancelled, and undone rounds do not count. When Streak is disabled, the streak is paused.
+
+The engine stores the current streak, best streak, and total correct answers tracked by Streak. Thresholds 3, 5, and 10 have a default bonus of **0**.
+
+You can configure up to 20 unique thresholds from 1 to 10000, with bonuses from 0 to 1000 points. A bonus is awarded when the exact threshold is reached. The total reward for one round cannot exceed the existing limit of 2000 points per viewer. Overall leaderboard limits are also preserved. The bonus is part of the same settlement and is included in team points.
+
+The achievement catalog contains **9 built-in achievements**:
+
+- First correct answer.
+- 10 correct answers.
+- 25 correct answers.
+- 50 correct answers.
+- A streak of 3 correct answers.
+- A streak of 5 correct answers.
+- A streak of 10 correct answers.
+- Participation in 10 rounds.
+- Participation in 50 rounds.
+
+The panel displays achievement requirements, active status, unlocked count, and unlock dates for the selected viewer. Achievements do not award additional points.
+
+Streak-related achievements require both systems to be enabled and only count eligible activity during their enabled period. Enabling the system does not automatically unlock achievements based on older progress. Disabling achievements cannot be used to connect separate correct-answer streaks.
+
+Undoing and recalculating rounds rebuilds the competitive projection using stored settlements and compacted historical data. An achievement may be removed if its requirements are no longer satisfied.
+
+Restarting, refreshing the panel, or revealing the same result again does not award the same reward twice. The new statistics are not the old streak fields from version 1.3.0.
+
 
 ## Files and requirements
 
@@ -223,10 +294,13 @@ http://127.0.0.1:7474/quiz/overlay.html?demo=1
 8. Switch between SIMPLE, ADVANCED, and LEGACY panel modes.
 9. Test the panel and overlay in both Polish and English.
 10. Optionally use the built-in simulator to test scoring and voting behavior without modifying real quiz data.
+11. In ADVANCED, check the LIVE toolbar, round summary, and Prepare next question.
+12. Test Settings and Help search and save custom command names.
+13. If you plan to use Streak or Achievements, test both systems separately before going live.
 
 ## Panel modes
 
-LukiQuizEngine 2.1.0 BETA offers three interface modes.
+LukiQuizEngine 2.2.0 offers three interface modes.
 
 ### SIMPLE
 
@@ -250,6 +324,12 @@ Provides access to the full set of available controls and tools, including:
 - Overlay customization.
 - Diagnostics.
 - The local quiz simulator.
+- The LIVE toolbar and round summary.
+- Question settings presets and Prepare next question.
+- Optional Stream Protection.
+- Streak and Achievements settings.
+- Custom Twitch command names and round announcements.
+- Settings search.
 
 ### LEGACY
 
@@ -267,9 +347,11 @@ Switching between them does not reset the leaderboard or active quiz settings.
 
 The interface also includes improved color differentiation, active button highlighting, and visual feedback for selected controls.
 
+The new 2.2.0 operator tools are available in ADVANCED. If Streak or Achievements have been enabled, switching to SIMPLE or LEGACY does not disable their tracking in the engine.
+
 ## Language settings
 
-LukiQuizEngine 2.1.0 BETA supports:
+LukiQuizEngine 2.2.0 supports:
 
 - **Polish (PL)**
 - **English (EN)**
@@ -284,9 +366,9 @@ When synchronization is enabled, the overlay follows the language selected in th
 
 Changing the interface language does not reset quiz scores or modify voting results.
 
-**Important:** Existing command names, Action identifiers, confirmation phrases, and internal variable names remain unchanged regardless of the selected interface language.
+**Important:** Action identifiers, confirmation phrases, and internal variable names remain unchanged regardless of the selected interface language.
 
-For example, the following Twitch commands still use their original names:
+Switching PL/EN does not rename commands. The default command names below can be configured separately in ADVANCED Settings:
 
 ```text
 !punkty
@@ -304,19 +386,73 @@ Required confirmation phrases such as `PRZYWROC` and `USUN ARCHIWA` must also be
 | `!ranking` | Display the top leaderboard entries in Twitch chat |
 | `!quiz ...` | Moderator commands supported by the quiz engine |
 
+The names listed above are the default command names.
+
+### Custom chat command names
+
+In **ADVANCED -> Settings -> Chat commands and voting -> Custom chat commands**, set the own-score command, ranking command, and admin prefix, then click **Save settings**.
+
+Defaults are `!punkty`, `!ranking`, and `!quiz`. For example, you can use `!wynik`, `!topka`, and `!q`.
+
+Each name must be between 2 and 33 characters: `!`, an ASCII A-Z/a-z letter, followed by letters, digits, `_`, or `-`. The three names must differ, ignoring letter case. Spaces, non-ASCII letters, and numeric prefixes such as `!1` or `!1test` are rejected to avoid voting collisions.
+
+Votes `!1`-`!12` remain unchanged. Choose names unused by other bots or Actions, because the panel does not inspect their configuration.
+
+After a confirmed save, the new names replace the old ones. Previous names are not retained as additional aliases.
+
+Changing the admin prefix also changes its subcommands. For example, after setting `!q`, use `!q help`, `!q zamknij`, or `!q wynik 1`.
+
+Broadcaster/moderator permissions, score/ranking cooldowns, and scoring remain unchanged. Help displays active engine command names rather than an unsaved draft. Restoring defaults changes only the three draft fields and still requires saving.
+
+Command names are persisted settings included in full backups and snapshots. Older state without these fields receives the original default names. Older settings-write requests that omit the fields preserve their current values.
+
+See [MIGRATION.md](MIGRATION.md) for restoration and rollback rules.
+
 Administrative chat commands are subject to the sender's permissions and moderator privileges.
 
-Automatic round event announcements in Twitch chat are disabled by default:
+### Chat response formatting
 
-```csharp
-AnnounceRoundEventsInChat = false
+The own-score and leaderboard commands use ` | ` as a separator for improved readability.
+
+In `!punkty`, it separates the score from answer statistics. In `!ranking`, it separates leaderboard entries.
+
+Example output:
+
+```text
+Lukituki6: 150 pkt | poprawne 18/25
 ```
 
-This setting is located in `QuizEngine.cs`.
+```text
+Quiz TOP 5: 1. Lukituki6 - 150 pkt | 2. John - 120 pkt | 3. Blond - 95 pkt
+```
+
+The hyphen between a viewer's name and their point total in the leaderboard remains unchanged.
+
+This is a display-only change and does not affect scoring, leaderboard order, or cooldowns.
+
+### Round announcements in chat
+
+In **ADVANCED -> Settings -> Chat commands and voting**, toggle **Round announcements in chat**, then click **Save settings**.
+
+The default is **OFF**. Editing C# code is no longer required.
+
+When enabled, the engine sends the existing messages for starting, manually closing, reopening, and revealing a quiz result or completing a POLL.
+
+Timer expiry without AutoReveal still only closes voting. No new announcement was added for this event.
+
+Result announcements are sent after the round has been saved successfully.
+
+Replies to own-score, ranking, and administrative commands remain available when this option is OFF.
+
+The toggle is part of engine settings, full backups, and snapshots.
+
+Older state without the field defaults to OFF. Restoring an older full backup also restores OFF. Ranking-only restoration keeps the current setting.
+
+A legacy panel settings payload that omits the field preserves its current value. Draft changes take effect only after confirmed saving.
 
 ### Vote parsing modes
 
-Version 2.1.0 introduces three vote parsing modes.
+LukiQuizEngine 2.2.0 supports three vote parsing modes.
 
 | Mode | Accepted examples | Behavior |
 | --- | --- | --- |
@@ -346,7 +482,7 @@ The engine also rejects certain invalid, invisible, and control characters to re
 
 ## Local quiz simulator
 
-Version 2.1.0 BETA introduces a built-in local simulator, available through the advanced interface.
+LukiQuizEngine 2.2.0 includes a built-in local simulator, available through the advanced interface.
 
 The simulator allows you to test selected quiz mechanics without running a real Twitch voting session.
 
@@ -413,6 +549,8 @@ Always review the preview and confirmation message before proceeding.
 
 A **full-state backup** is not the same as a CSV leaderboard export.
 
+A CSV leaderboard export is also not a complete backup of Streak and Achievements data. Use a full-state backup to preserve this information.
+
 ### Automatic archiving before a reset
 
 Before resetting a non-empty leaderboard, the engine creates a local JSON archive.
@@ -466,7 +604,7 @@ If necessary, consult the Streamer.bot logs.
 
 ### Manual archive deletion
 
-Version 2.1.0 BETA adds manual archive cleanup.
+The panel supports manual archive cleanup.
 
 You can select eligible archives for deletion through the panel.
 
@@ -494,7 +632,7 @@ Create a separate backup before removing important archives.
 
 ### Automatic archive cleanup
 
-Version 2.1.0 BETA also provides optional automatic archive retention settings.
+LukiQuizEngine also provides optional automatic archive retention settings.
 
 The following options are available:
 
@@ -537,6 +675,9 @@ It does not protect against someone who can intentionally modify archive files a
 | Automatic snapshots | Streamer.bot variable `localQuiz_snapshots_v2` |
 | JSON leaderboard archives (automatic, manual, safety) | `%LOCALAPPDATA%\LukiQuizEngine\RankingArchives` |
 | Interface preferences and browser draft | Browser `localStorage` |
+| Question settings presets | Browser `localStorage` |
+| Stream Protection setting | Browser `localStorage` |
+| Streak and Achievements settings and progress | Additional fields in `localQuiz_data_v2` |
 | Full-state backup | File exported from the web panel on request |
 | WebSocket password | Memory of the running client and, for OBS, the fragment of the full overlay URL |
 
@@ -550,7 +691,7 @@ The AppData archive directory is associated with the current Windows user.
 
 If you move LukiQuizEngine to another computer or Windows account, copy the required archives separately.
 
-Replacing the HTML and C# files does not automatically transfer locally stored archives.
+Replacing the HTML and C# files does not automatically transfer locally stored archives or presets saved in browser storage.
 
 ## Security and known limitations
 
@@ -613,10 +754,39 @@ If it is exposed, change your WebSocket password and generate a new overlay URL.
 - Local leaderboard data and archives may contain Twitch usernames and user identifiers. Do not publish these files accidentally.
 - Built-in safety backups reduce the risk of losing data but do not replace a separate backup of your computer.
 - Automatic archive cleanup and manual deletion should be used carefully because they can permanently remove saved files.
+- Stream Protection helps prevent accidental operations in the ADVANCED interface but does not resolve the HTTP `/DoAction` security limitation.
+- Full backup and snapshot restoration may be blocked when active Streak and Achievements settings or progress exist and the selected backup is incompatible.
+- Presets and some interface preferences are stored locally in the browser. Clearing browser storage may permanently remove them.
 
 ## Upgrading an existing installation
 
-### From v2.0.2 BETA to v2.1.0 BETA
+### From v2.1.0 BETA to v2.2.0 STABLE
+
+1. Finish or cancel the active round.
+2. Export the current leaderboard as CSV and create a full-state backup.
+3. Preserve the previous installation directory and any important leaderboard archives.
+4. Replace the C# code in the same `QUIZ - Silnik` Action with the new `QuizEngine.cs`.
+5. Click **Find Refs**, followed by **Save and Compile**.
+6. Replace `panel.html` and `overlay.html` together.
+7. Keep the existing Twitch message trigger and all persistent V2 variables.
+8. Refresh the browser and OBS browser source caches if necessary.
+9. Confirm that the panel and engine display version `2.2.0` with the identifiers `PHoeniX` and `QUPA`.
+10. Verify your existing leaderboard, round history, templates, question sets, and archives.
+11. Test panel modes, language switching, Twitch voting, and the `!punkty` and `!ranking` commands.
+12. Check the new ADVANCED settings. Streak and Achievements should remain disabled when loading a 2.1.0 state.
+13. If you intend to use the new competitive systems, test their tracking, persistence, and round undo behavior separately.
+
+Do not delete persistent V2 variables or existing archives as part of the update.
+
+Keep the same panel host and port if you want to preserve `localStorage` data, including interface preferences and presets.
+
+Before restoring an older full backup, review the restrictions affecting Streak and Achievements data.
+
+See [MIGRATION.md](MIGRATION.md) for detailed upgrade and restoration rules.
+
+### Historical upgrade from v2.0.2 BETA to v2.1.0 BETA
+
+The following instructions describe the historical transition between earlier releases.
 
 1. Finish or cancel the active round.
 2. Export the current leaderboard and a complete state backup.
@@ -645,7 +815,7 @@ Before updating:
 7. Keep the existing V2 persistent variables and archives.
 8. Test the quiz and archive features using non-production data.
 
-Review the changelog for changes introduced by intermediate releases.
+Review the changelog and [MIGRATION.md](MIGRATION.md) for intermediate changes and the rules for upgrading to 2.2.0.
 
 ### From v1.3.0
 
@@ -664,6 +834,10 @@ Do not migrate while a quiz round is active.
 | The panel connects but the Action does not respond | Check the exact Action name `QUIZ - Silnik`, the current C# code, **Find Refs**, and **Save and Compile** |
 | Votes such as `!1` are not working | Check Twitch connectivity, the message trigger, whether voting is open, and whether the answer number is valid |
 | Additional text after a voting command is rejected | Check whether the vote parsing mode is `STRICT`, `WHITESPACE`, or `ATTACHED` |
+| The `!punkty` or `!ranking` commands do not respond | Check the active command names saved in ADVANCED and their cooldowns |
+| Round announcements are not appearing | Check whether the option is enabled in ADVANCED and whether settings were saved |
+| Streak or Achievements progress is not being tracked | Check the corresponding switches in ADVANCED, whether a new round was started after enabling them, and whether the round qualifies |
+| A full backup or snapshot cannot be restored | Check for active or saved Streak and Achievements progress and whether the backup is compatible |
 | The overlay displays demo content or outdated information | Remove `demo=1`, use the URL copied after authentication, and check the browser cache and HTTP mapping |
 | The overlay is not using the expected language | Check the language synchronization setting and the overlay language configuration |
 | The archive folder does not open | Check Windows, AppData permissions, File Explorer, and the Streamer.bot logs |
@@ -682,9 +856,9 @@ This guide applies to **LukiQuizEngine v1.3.0 only**.
 
 It is preserved for users who still operate the older release.
 
-Version **2.1.0 BETA** already includes configurable `STRICT`, `WHITESPACE`, and `ATTACHED` vote parsing modes.
+Version **2.2.0** includes configurable `STRICT`, `WHITESPACE`, and `ATTACHED` vote parsing modes.
 
-Do not replace the regular expressions in the current 2.1.0 engine with the examples below.
+Do not replace the regular expressions in the current 2.2.0 engine with the examples below.
 
 By default, version 1.3.0 required votes to be standalone commands:
 
@@ -748,12 +922,12 @@ When other Twitch commands could conflict with voting, the whitespace-based vari
 
 ## Project history and license
 
-- [CHANGELOG.md](CHANGELOG.md) - release history and changes introduced in LukiQuizEngine V2, including version 2.1.0 BETA.
-- [MIGRATION.md](MIGRATION.md) - migration instructions from the older 1.3.0 version.
+- [CHANGELOG.md](CHANGELOG.md) - release history and changes introduced in LukiQuizEngine V2, including version 2.2.0 STABLE.
+- [MIGRATION.md](MIGRATION.md) - upgrade instructions from older versions to 2.2.0.
 - [READMElegacy.md](1.3.0/READMElegacy.md) - archived documentation for version 1.3.0.
 - Older versions of the main README are available through the [GitHub file history](https://github.com/Lukituki6/LukiQuizEngine-for-Streamer.bot/commits/main/README.md).
 
-Historical installation instructions for v1.3.0 should not be treated as current installation instructions for v2.1.0 BETA.
+Historical installation instructions for v1.3.0 should not be treated as current installation instructions for 2.2.0.
 
 **AI assistance:** This project has also been developed with the assistance of artificial intelligence tools, including code analysis and development support.
 
