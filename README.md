@@ -97,6 +97,87 @@ Do działania wystarczy **jedna Action C# i jeden trigger wiadomości Twitch**. 
 - Podgląd zdobytych osiągnięć, warunków ich zdobycia i zapisanych dat w panelu ADVANCED.
 - Zachowanie istniejącego postępu po wyłączeniu systemów.
 
+
+### Szczegółowa instrukcja komend czatu
+
+LukiQuizEngine pozwala widzom głosować i sprawdzać swoje wyniki bezpośrednio na czacie Twitch. Nadawca oraz moderatorzy mogą dodatkowo zarządzać rundami quizu za pomocą komend administracyjnych.
+
+Wszystkie poniższe przykłady korzystają z domyślnych nazw komend.
+
+#### Komendy dla widzów
+
+| Komenda | Działanie |
+| --- | --- |
+| `!1` do `!12` | Oddaje głos na odpowiedź o wskazanym numerze, jeśli jest dostępna w aktualnej rundzie. |
+| `!punkty` | Wyświetla własną liczbę punktów oraz statystyki poprawnych i wszystkich odpowiedzi. |
+| `!ranking` | Wyświetla TOP 5 uczestników z największą liczbą punktów na czacie Twitch. |
+
+**Ważne informacje:**
+
+- Głosy można oddawać wyłącznie podczas otwartego głosowania.
+- Maksymalna liczba odpowiedzi w pytaniu wynosi 12.
+- Możliwość zmiany głosu zależy od wybranej polityki głosowania (`LAST`, `FIRST` lub `LIMITED`).
+- Domyślnie obowiązuje tryb `STRICT`, wymagający samodzielnej komendy, np. `!3`. Pozostałe tryby opisano poniżej.
+- Komendy `!punkty` i `!ranking` mogą podlegać indywidualnym i globalnym cooldownom.
+
+#### Komendy administracyjne
+
+Komendy administracyjne są dostępne wyłącznie dla właściciela kanału (broadcastera) oraz moderatorów Twitch.
+
+| Komenda | Działanie |
+| --- | --- |
+| `!quiz` | Wyświetla skróconą pomoc dotyczącą komend administracyjnych. |
+| `!quiz pomoc` | Wyświetla listę podstawowych komend i ich składnię. |
+| `!quiz start Pytanie \| Odp. 1 \| Odp. 2` | Rozpoczyna nową rundę z podanym pytaniem i odpowiedziami, bez automatycznego timera. |
+| `!quiz zamknij` | Zamyka głosowanie. Widzowie nie mogą już oddawać nowych głosów. |
+| `!quiz wynik 3` | Ujawnia odpowiedź nr 3 jako poprawną i przyznaje 1 punkt za prawidłowy głos. |
+| `!quiz wynik 3 5` | Ujawnia odpowiedź nr 3 i przyznaje 5 punktów za prawidłowy głos. |
+| `!quiz wynik 7 3 1` | Przyznaje 3 punkty za odpowiedź nr 7 oraz po 1 punkcie za odpowiedzi sąsiednie, czyli nr 6 i 8. |
+| `!quiz anuluj` | Anuluje rundę bez przyznawania punktów. |
+| `!quiz pokaz` | Pokazuje aktualny quiz lub podium na overlayu OBS, jeśli są dostępne. |
+| `!quiz ukryj` | Ukrywa aktualny quiz lub podium na overlayu OBS. |
+
+#### Jak korzystać z komend? Przykład
+
+Załóżmy, że chcesz przeprowadzić quiz z trzema odpowiedziami.
+
+**1. Rozpoczęcie quizu**
+
+`!quiz start Jaka jest stolica Polski? | Kraków | Warszawa | Gdańsk`
+
+Silnik rozpocznie rundę z trzema odpowiedziami, bez timera.
+
+**2. Głosowanie widzów**
+
+Widzowie mogą wpisywać na czacie `!1`, `!2` lub `!3`.
+
+**3. Zamknięcie głosowania**
+
+`!quiz zamknij`
+
+Po zamknięciu nie będą przyjmowane nowe głosy.
+
+**4. Ujawnienie prawidłowej odpowiedzi**
+
+`!quiz wynik 2 5`
+
+Silnik wskaże Warszawę jako poprawną odpowiedź i przyzna po 5 punktów widzom, którzy prawidłowo zagłosowali.
+
+**5. Sprawdzenie rankingu**
+
+`!ranking`
+
+Bot wyświetli pięciu najlepszych uczestników na czacie Twitch.
+
+#### Dodatkowe informacje
+
+- Składnia `!quiz wynik NUMER PUNKTY CZĘŚCIOWE` umożliwia przyznawanie punktów za odpowiedź poprawną i sąsiednie odpowiedzi. Jeśli nie podasz liczby punktów, domyślnie zostanie przyznany 1 punkt za poprawny głos i 0 za sąsiednie.
+- Ręczne wybieranie dowolnych odpowiedzi częściowo poprawnych oraz bardziej zaawansowane ustawienia punktowania są dostępne w panelu WWW.
+- Silnik rozpoznaje również wybrane alternatywne nazwy, np. `!quiz stop`, `!quiz help`, `!quiz cancel`, `!quiz show`, `!quiz hide` oraz `!quiz odpowiedz`.
+- Komendy administracyjne nie omijają ograniczeń stanu rundy. Niektóre operacje wymagają rozpoczętego lub odpowiednio zakończonego głosowania.
+- Domyślne nazwy `!punkty`, `!ranking` i `!quiz` można zmienić w ustawieniach ADVANCED. Po zmianie prefiksu administracyjnego wszystkie jego podkomendy używają nowej nazwy.
+- Nie trzeba tworzyć osobnych komend w zakładce Commands Streamer.bot. Komendy są obsługiwane przez istniejącą akcję `QUIZ - Silnik` i jeden trigger `Twitch > Chat > Chat Message`.
+
 ## Quality of Life i rywalizacja w 2.2.0
 
 Nowe narzędzia są dostępne w **ADVANCED**, w dotychczasowych sekcjach LIVE, edycji pytania, rankingu i ustawień. Lewa nawigacja nie otrzymała nowych kategorii. PROSTY i LEGACY zachowują zwykły ranking. Przełączenie widoku nie przerywa naliczania funkcji wcześniej włączonych w silniku.
