@@ -97,6 +97,87 @@ It requires only **one C# Action and one Twitch chat message trigger**. No Node.
 - Viewing unlocked achievements, their requirements, and recorded dates in the ADVANCED panel.
 - Preserving existing progress when either system is disabled.
 
+### Detailed chat commands guide
+
+LukiQuizEngine allows viewers to vote and check their scores directly through Twitch chat. The broadcaster and moderators can also manage quiz rounds using administrative commands.
+
+All examples below use the default command names.
+
+#### Viewer commands
+
+| Command | Description |
+| --- | --- |
+| `!1` to `!12` | Votes for the corresponding answer number, provided that the option exists in the current round. |
+| `!punkty` | Displays the viewer's own points, correct answers, and total answered questions. |
+| `!ranking` | Displays the TOP 5 participants with the highest scores in Twitch chat. |
+
+**Important notes:**
+
+- Votes are accepted only while voting is open.
+- Each question can contain up to 12 answer options.
+- Whether viewers can change their votes depends on the selected voting policy (`LAST`, `FIRST`, or `LIMITED`).
+- The default `STRICT` mode requires a standalone voting command, such as `!3`. Other modes are explained below.
+- The `!punkty` and `!ranking` commands may be subject to individual and global cooldowns.
+
+#### Administrative commands
+
+Administrative commands are available only to the channel broadcaster and Twitch moderators.
+
+| Command | Description |
+| --- | --- |
+| `!quiz` | Displays a short list of administrative commands. |
+| `!quiz pomoc` | Displays the basic command list and usage syntax. |
+| `!quiz start Question \| Answer 1 \| Answer 2` | Starts a new quiz round with the specified question and answers, without an automatic timer. |
+| `!quiz zamknij` | Closes voting. Viewers can no longer submit new votes. |
+| `!quiz wynik 3` | Reveals answer 3 as correct and awards 1 point for each correct vote. |
+| `!quiz wynik 3 5` | Reveals answer 3 and awards 5 points for each correct vote. |
+| `!quiz wynik 7 3 1` | Awards 3 points for answer 7 and 1 point for each adjacent answer, numbers 6 and 8. |
+| `!quiz anuluj` | Cancels the current round without awarding points. |
+| `!quiz pokaz` | Shows the current quiz or podium in the OBS overlay, when available. |
+| `!quiz ukryj` | Hides the current quiz or podium in the OBS overlay. |
+
+#### How to use the commands: example
+
+Suppose you want to run a quiz with three possible answers.
+
+**1. Start a quiz round**
+
+`!quiz start What is the capital of Poland? | Krakow | Warsaw | Gdansk`
+
+The engine starts a new round with three answer options and no automatic timer.
+
+**2. Viewers submit their votes**
+
+Viewers can type `!1`, `!2`, or `!3` in Twitch chat.
+
+**3. Close voting**
+
+`!quiz zamknij`
+
+Once voting is closed, no additional votes are accepted.
+
+**4. Reveal the correct answer**
+
+`!quiz wynik 2 5`
+
+The engine reveals Warsaw as the correct answer and awards 5 points to each viewer who voted correctly.
+
+**5. Check the leaderboard**
+
+`!ranking`
+
+The bot displays the top five participants in Twitch chat.
+
+#### Additional information
+
+- The syntax `!quiz wynik NUMBER POINTS ADJACENT_POINTS` allows you to award points for the correct answer and its neighboring options. If no point values are specified, the defaults are 1 point for the correct answer and 0 for adjacent answers.
+- Manually selecting other partially correct answers and configuring advanced scoring options requires the web panel.
+- The engine also supports selected alternative command names, including `!quiz stop`, `!quiz help`, `!quiz cancel`, `!quiz show`, `!quiz hide`, and `!quiz odpowiedz`.
+- Administrative commands must respect the current round state. Some operations require an active or appropriately completed voting phase.
+- The default command names `!punkty`, `!ranking`, and `!quiz` can be changed in ADVANCED settings. Changing the administrative prefix also changes the prefix used by its subcommands.
+- There is no need to create separate commands in Streamer.bot's Commands section. All commands are handled by the existing `QUIZ - Silnik` Action and a single `Twitch > Chat > Chat Message` trigger.
+- Switching the panel language to English does not automatically translate Twitch chat commands.
+
 ## Quality of Life and competitive features in 2.2.0
 
 New operator tools are available in **ADVANCED**, within the existing LIVE, question editing, leaderboard, and settings sections. No new categories were added to the left navigation. SIMPLE and LEGACY retain their regular leaderboard interfaces. Switching panel modes does not interrupt the tracking of features already enabled in the engine.
